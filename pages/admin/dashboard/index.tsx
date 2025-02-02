@@ -225,14 +225,14 @@ export default function AdminDashboard() {
                             Edit
                           </Button>
                         </DialogTrigger>
-                        <DialogContent>
+                        <DialogContent className="bg-white shadow-lg rounded-lg p-6">
                           <DialogHeader>
-                            <DialogTitle>Edit Product Type</DialogTitle>
+                            <DialogTitle className="text-black">Edit Product Type</DialogTitle>
                             <DialogDescription>Change the name of the product type here.</DialogDescription>
                           </DialogHeader>
                           <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-4 items-center gap-4">
-                              <Label htmlFor="newTypeName" className="text-right">
+                              <Label htmlFor="newTypeName" className="text-right text-black">
                                 New Name
                               </Label>
                               <Input
@@ -241,7 +241,7 @@ export default function AdminDashboard() {
                                 onChange={(e) =>
                                   setEditingProductType((prev) => ({ ...prev, newName: e.target.value }))
                                 }
-                                className="col-span-3"
+                                className="col-span-3 text-black"
                               />
                             </div>
                           </div>
@@ -323,25 +323,25 @@ export default function AdminDashboard() {
                             Edit
                           </Button>
                         </DialogTrigger>
-                        <DialogContent>
+                        <DialogContent className="bg-white shadow-lg rounded-lg p-6">
                           <DialogHeader>
-                            <DialogTitle>Edit Product</DialogTitle>
+                            <DialogTitle className="text-black">Edit Product</DialogTitle>
                             <DialogDescription>Make changes to the product details here.</DialogDescription>
                           </DialogHeader>
                           <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-4 items-center gap-4">
-                              <Label htmlFor="name" className="text-right">
+                              <Label htmlFor="name" className="text-right text-black">
                                 Name
                               </Label>
                               <Input
                                 id="name"
                                 value={editingProduct?.name || ""}
                                 onChange={(e) => setEditingProduct((prev) => ({ ...prev, name: e.target.value }))}
-                                className="col-span-3"
+                                className="col-span-3 text-black"
                               />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                              <Label htmlFor="price" className="text-right">
+                              <Label htmlFor="price" className="text-right text-black">
                                 Price
                               </Label>
                               <Input
@@ -354,11 +354,11 @@ export default function AdminDashboard() {
                                     price: Number.parseFloat(e.target.value),
                                   }))
                                 }
-                                className="col-span-3"
+                                className="col-span-3 text-black"
                               />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                              <Label htmlFor="quantity" className="text-right">
+                              <Label htmlFor="quantity" className="text-right text-black">
                                 Quantity
                               </Label>
                               <Input
@@ -371,18 +371,18 @@ export default function AdminDashboard() {
                                     quantity: Number.parseInt(e.target.value),
                                   }))
                                 }
-                                className="col-span-3"
+                                className="col-span-3 text-black"
                               />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                              <Label htmlFor="type" className="text-right">
+                              <Label htmlFor="type" className="text-right text-black">
                                 Type
                               </Label>
                               <Select
                                 onValueChange={(value) => setEditingProduct((prev) => ({ ...prev, type: value }))}
                                 defaultValue={editingProduct?.type}
                               >
-                                <SelectTrigger className="col-span-3">
+                                <SelectTrigger className="col-span-3 text-black">
                                   <SelectValue placeholder="Select type" />
                                 </SelectTrigger>
                                 <SelectContent>
