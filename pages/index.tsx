@@ -1,11 +1,11 @@
-import { motion } from "framer-motion"
-import Image from "next/image"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import ProductDisplay from "@/components/ProductDisplay"
-import { Playfair_Display } from "next/font/google"
+import { motion } from "framer-motion";
+import Image from "next/image";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import ProductDisplay from "@/components/ProductDisplay";
+import { Playfair_Display } from "next/font/google";
 
-const playfair = Playfair_Display({ subsets: ["latin"], weight: "700" })
+const playfair = Playfair_Display({ subsets: ["latin"], weight: "700" });
 
 export default function Home() {
   return (
@@ -17,9 +17,12 @@ export default function Home() {
           transition={{ duration: 0.5 }}
           className="text-center mb-16"
         >
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-blue-600 mb-4">Welcome to Aesh.Summer</h1>
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-blue-600 mb-4">
+            Welcome to Aesh.Summer
+          </h1>
           <p className="text-xl text-gray-700 mb-8 max-w-2xl mx-auto">
-            Discover our collection of summer essentials that blend style and comfort for your perfect sunny days.
+            Discover our collection of summer essentials that blend style and
+            comfort for your perfect sunny days.
           </p>
           <Button asChild size="lg" className="text-lg px-8 py-4">
             <Link href="#featured-products">Shop Now</Link>
@@ -41,8 +44,12 @@ export default function Home() {
               objectFit="cover"
               className="absolute inset-0"
             />
-            <div className="absolute top-4 right-2">
-              <h2 className={`text-5xl md:text-8xl font-bold text-white tracking-wider ${playfair.className}`}>AESH</h2>
+            <div className="absolute top-20 right-10">
+              <h2
+                className={`text-5xl md:text-8xl font-extrabold text-white tracking-wide italic drop-shadow-lg ${playfair.className}`}
+              >
+                AESH
+              </h2>
             </div>
           </div>
         </motion.div>
@@ -54,10 +61,12 @@ export default function Home() {
           transition={{ delay: 0.8, duration: 0.5 }}
           id="featured-products"
         >
-          <h2 className="text-3xl font-bold text-center mb-8">Featured Products</h2>
+          <h2 className="text-3xl font-bold text-center mb-8">
+            Featured Products
+          </h2>
           <ProductDisplay />
         </motion.div>
       </div>
     </section>
-  )
+  );
 }
