@@ -19,7 +19,7 @@ export default function About() {
           transition={{ delay: 0.2, duration: 0.5 }}
         >
           <Image
-            src="/placeholder.svg?height=400&width=600"
+            src="/img2.jpg"
             alt="Aesh.Summer Team"
             width={600}
             height={400}
