@@ -1,5 +1,5 @@
-import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react"
-import Link from "next/link"
+import { Instagram, Linkedin } from "lucide-react";
+import Link from "next/link";
 
 export default function Footer() {
   return (
@@ -43,17 +43,13 @@ export default function Footer() {
           <div className="w-full md:w-1/3">
             <h4 className="text-lg font-semibold mb-4">Follow Us</h4>
             <div className="flex space-x-4">
-              <a href="#" className="hover:text-blue-300 transition">
-                <Facebook />
-              </a>
-              <a href="#" className="hover:text-blue-300 transition">
-                <Twitter />
-              </a>
-              <a href="#" className="hover:text-blue-300 transition">
+              <a
+                href="https://www.instagram.com/aesh.summer?igsh=YW0yczFrcHNoejZo"
+                className="hover:text-blue-300 transition"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <Instagram />
-              </a>
-              <a href="#" className="hover:text-blue-300 transition">
-                <Linkedin />
               </a>
             </div>
           </div>
@@ -63,5 +59,5 @@ export default function Footer() {
         </div>
       </div>
     </footer>
-  )
+  );
 }
