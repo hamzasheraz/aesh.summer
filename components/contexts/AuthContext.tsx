@@ -25,14 +25,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const login = async (username: string, password: string) => {
-    // In a real application, you would validate credentials against a backend
-    if (username === "admin" && password === "password") {
-      setIsLoggedIn(true)
-      localStorage.setItem("isLoggedIn", "true")
-      return true
+    try {
+      const response = await fetch("/api/admin-login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+  
+      // Handle non-OK responses
+      if (!response.ok) {
+        const data = await response.json();
+        console.error("Login failed:", data.message || "Unknown error");
+        return false;
+      }
+  
+      // Handle success response
+      const data = await response.json();
+      if (data.message === "Login successful") {
+        setIsLoggedIn(true);  // Update the login state
+  
+        // Optionally redirect user to dashboard or another page
+        // e.g., window.location.href = "/dashboard";
+  
+        return true; // Successfully logged in
+      }
+  
+      return false; // Login failed (message not "Login successful")
+    } catch (error) {
+      console.error("Login error:", error);
+      return false;
     }
-    return false
-  }
+  };
+  
 
   const logout = () => {
     setIsLoggedIn(false)
