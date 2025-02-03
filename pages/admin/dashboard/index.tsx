@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "../../../components/contexts/AuthContext"
+import { useAuth } from "@/components/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -19,12 +19,35 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
-// Mock data for demonstration
+// Updated mock data for orders
 const mockOrders = [
-  { id: 1, customer: "John Doe", total: 99.99, status: "Completed" },
-  { id: 2, customer: "Jane Smith", total: 149.99, status: "Processing" },
-  { id: 3, customer: "Bob Johnson", total: 79.99, status: "Shipped" },
+  {
+    id: 1,
+    customer: "John Doe",
+    email: "john@example.com",
+    address: "123 Main St, City, Country",
+    total: 99.99,
+    status: "Completed",
+  },
+  {
+    id: 2,
+    customer: "Jane Smith",
+    email: "jane@example.com",
+    address: "456 Elm St, Town, Country",
+    total: 149.99,
+    status: "Processing",
+  },
+  {
+    id: 3,
+    customer: "Bob Johnson",
+    email: "bob@example.com",
+    address: "789 Oak St, Village, Country",
+    total: 79.99,
+    status: "Shipped",
+  },
 ]
 
 const mockProducts = [
@@ -35,12 +58,31 @@ const mockProducts = [
 
 const mockProductTypes = ["Dresses", "Tops", "Bottoms", "Swimwear", "Accessories"]
 
+const mockContactSubmissions = [
+  { id: 1, name: "Alice Cooper", email: "alice@example.com", phone: "123-456-7890", message: "I love your products!" },
+  {
+    id: 2,
+    name: "Bob Dylan",
+    email: "bob@example.com",
+    phone: "098-765-4321",
+    message: "When will you restock beach towels?",
+  },
+  {
+    id: 3,
+    name: "Charlie Brown",
+    email: "charlie@example.com",
+    phone: "555-555-5555",
+    message: "Do you offer international shipping?",
+  },
+]
+
 export default function AdminDashboard() {
   const { isLoggedIn, logout } = useAuth()
   const router = useRouter()
   const [orders, setOrders] = useState(mockOrders)
   const [products, setProducts] = useState(mockProducts)
   const [productTypes, setProductTypes] = useState(mockProductTypes)
+  const [contactSubmissions, setContactSubmissions] = useState(mockContactSubmissions)
   const [newProduct, setNewProduct] = useState({ name: "", price: "", quantity: "", type: "" })
   const [editingProduct, setEditingProduct] = useState(null)
   const [newProductType, setNewProductType] = useState("")
@@ -121,6 +163,10 @@ export default function AdminDashboard() {
     setOrders(orders.map((order) => (order.id === id ? { ...order, status: newStatus } : order)))
   }
 
+  const handleCancelOrder = (id) => {
+    setOrders(orders.map((order) => (order.id === id ? { ...order, status: "Cancelled" } : order)))
+  }
+
   if (isLoading) {
     return <div className="container mx-auto p-4">Loading...</div>
   }
@@ -138,279 +184,343 @@ export default function AdminDashboard() {
 
   return (
     <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-0">Admin Dashboard</h1>
         <Button onClick={handleLogout}>Logout</Button>
       </div>
 
-      <div className="grid gap-6 mb-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Order Statistics</CardTitle>
-            <CardDescription>Overview of recent orders</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order ID</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {orders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell>{order.id}</TableCell>
-                    <TableCell>{order.customer}</TableCell>
-                    <TableCell>${order.total.toFixed(2)}</TableCell>
-                    <TableCell>{order.status}</TableCell>
-                    <TableCell>
-                      <Select
-                        onValueChange={(value) => handleChangeOrderStatus(order.id, value)}
-                        defaultValue={order.status}
-                      >
-                        <SelectTrigger className="w-[180px]">
-                          <SelectValue placeholder="Change status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Processing">Processing</SelectItem>
-                          <SelectItem value="Shipped">Shipped</SelectItem>
-                          <SelectItem value="Completed">Completed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+      <Tabs defaultValue="orders" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-2">
+          <TabsTrigger value="orders">Orders</TabsTrigger>
+          <TabsTrigger value="products">Products</TabsTrigger>
+          <TabsTrigger value="product-types">Product Types</TabsTrigger>
+          <TabsTrigger value="contact">Contact</TabsTrigger>
+        </TabsList>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Product Type Management</CardTitle>
-            <CardDescription>Add, edit, or remove product types</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-2 mb-4">
-              <Input
-                placeholder="New Product Type"
-                value={newProductType}
-                onChange={(e) => setNewProductType(e.target.value)}
-              />
-              <Button onClick={handleAddProductType}>Add Type</Button>
-            </div>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {productTypes.map((type) => (
-                  <TableRow key={type}>
-                    <TableCell>{type}</TableCell>
-                    <TableCell>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="mr-2"
-                            onClick={() => setEditingProductType({ oldName: type, newName: type })}
+        <TabsContent value="orders">
+          <Card>
+            <CardHeader>
+              <CardTitle>Order Statistics</CardTitle>
+              <CardDescription>Overview of recent orders</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[400px] w-full">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px]">Order ID</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Address</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {orders.map((order) => (
+                      <TableRow key={order.id}>
+                        <TableCell className="font-medium">{order.id}</TableCell>
+                        <TableCell>{order.customer}</TableCell>
+                        <TableCell>{order.email}</TableCell>
+                        <TableCell>{order.address}</TableCell>
+                        <TableCell>${order.total.toFixed(2)}</TableCell>
+                        <TableCell>{order.status}</TableCell>
+                        <TableCell className="text-right">
+                          <Select
+                            onValueChange={(value) => handleChangeOrderStatus(order.id, value)}
+                            defaultValue={order.status}
                           >
-                            Edit
+                            <SelectTrigger className="w-[180px]">
+                              <SelectValue placeholder="Change status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Processing">Processing</SelectItem>
+                              <SelectItem value="Shipped">Shipped</SelectItem>
+                              <SelectItem value="Completed">Completed</SelectItem>
+                              <SelectItem value="Cancelled">Cancelled</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleCancelOrder(order.id)}
+                            className="ml-2"
+                          >
+                            Cancel
                           </Button>
-                        </DialogTrigger>
-                        <DialogContent className="bg-white shadow-lg rounded-lg p-6">
-                          <DialogHeader>
-                            <DialogTitle className="text-black">Edit Product Type</DialogTitle>
-                            <DialogDescription>Change the name of the product type here.</DialogDescription>
-                          </DialogHeader>
-                          <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-4 items-center gap-4">
-                              <Label htmlFor="newTypeName" className="text-right text-black">
-                                New Name
-                              </Label>
-                              <Input
-                                id="newTypeName"
-                                value={editingProductType?.newName || ""}
-                                onChange={(e) =>
-                                  setEditingProductType((prev) => ({ ...prev, newName: e.target.value }))
-                                }
-                                className="col-span-3 text-black"
-                              />
-                            </div>
-                          </div>
-                          <DialogFooter>
-                            <Button onClick={handleEditProductType}>Save changes</Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                      <Button variant="destructive" onClick={() => handleRemoveProductType(type)}>
-                        Remove
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Product Management</CardTitle>
-            <CardDescription>Add, edit, or remove products</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-5 gap-2 mb-4">
-              <Input
-                placeholder="Product Name"
-                value={newProduct.name}
-                onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-              />
-              <Input
-                type="number"
-                placeholder="Price"
-                value={newProduct.price}
-                onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-              />
-              <Input
-                type="number"
-                placeholder="Quantity"
-                value={newProduct.quantity}
-                onChange={(e) => setNewProduct({ ...newProduct, quantity: e.target.value })}
-              />
-              <Select onValueChange={(value) => setNewProduct({ ...newProduct, type: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {productTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button onClick={handleAddProduct}>Add Product</Button>
-            </div>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Quantity</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {products.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell>{product.name}</TableCell>
-                    <TableCell>${product.price.toFixed(2)}</TableCell>
-                    <TableCell>{product.quantity}</TableCell>
-                    <TableCell>{product.type}</TableCell>
-                    <TableCell>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" className="mr-2" onClick={() => setEditingProduct(product)}>
-                            Edit
+        <TabsContent value="products">
+          <Card>
+            <CardHeader>
+              <CardTitle>Product Management</CardTitle>
+              <CardDescription>Add, edit, or remove products</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2 mb-4">
+                <Input
+                  placeholder="Product Name"
+                  value={newProduct.name}
+                  onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                />
+                <Input
+                  type="number"
+                  placeholder="Price"
+                  value={newProduct.price}
+                  onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                />
+                <Input
+                  type="number"
+                  placeholder="Quantity"
+                  value={newProduct.quantity}
+                  onChange={(e) => setNewProduct({ ...newProduct, quantity: e.target.value })}
+                />
+                <Select onValueChange={(value) => setNewProduct({ ...newProduct, type: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {productTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button onClick={handleAddProduct} className="w-full">
+                  Add Product
+                </Button>
+              </div>
+              <ScrollArea className="h-[300px] w-full">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {products.map((product) => (
+                      <TableRow key={product.id}>
+                        <TableCell className="font-medium">{product.name}</TableCell>
+                        <TableCell>${product.price.toFixed(2)}</TableCell>
+                        <TableCell>{product.quantity}</TableCell>
+                        <TableCell>{product.type}</TableCell>
+                        <TableCell className="text-right">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm" className="mr-2">
+                                Edit
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[425px]">
+                              <DialogHeader>
+                                <DialogTitle>Edit Product</DialogTitle>
+                                <DialogDescription>Make changes to the product details here.</DialogDescription>
+                              </DialogHeader>
+                              <div className="grid gap-4 py-4">
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                  <Label htmlFor="name" className="text-right">
+                                    Name
+                                  </Label>
+                                  <Input
+                                    id="name"
+                                    value={editingProduct?.name || ""}
+                                    onChange={(e) => setEditingProduct((prev) => ({ ...prev, name: e.target.value }))}
+                                    className="col-span-3"
+                                  />
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                  <Label htmlFor="price" className="text-right">
+                                    Price
+                                  </Label>
+                                  <Input
+                                    id="price"
+                                    type="number"
+                                    value={editingProduct?.price || ""}
+                                    onChange={(e) =>
+                                      setEditingProduct((prev) => ({
+                                        ...prev,
+                                        price: Number.parseFloat(e.target.value),
+                                      }))
+                                    }
+                                    className="col-span-3"
+                                  />
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                  <Label htmlFor="quantity" className="text-right">
+                                    Quantity
+                                  </Label>
+                                  <Input
+                                    id="quantity"
+                                    type="number"
+                                    value={editingProduct?.quantity || ""}
+                                    onChange={(e) =>
+                                      setEditingProduct((prev) => ({
+                                        ...prev,
+                                        quantity: Number.parseInt(e.target.value),
+                                      }))
+                                    }
+                                    className="col-span-3"
+                                  />
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                  <Label htmlFor="type" className="text-right">
+                                    Type
+                                  </Label>
+                                  <Select
+                                    onValueChange={(value) => setEditingProduct((prev) => ({ ...prev, type: value }))}
+                                    defaultValue={editingProduct?.type}
+                                  >
+                                    <SelectTrigger className="col-span-3">
+                                      <SelectValue placeholder="Select type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {productTypes.map((type) => (
+                                        <SelectItem key={type} value={type}>
+                                          {type}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                              <DialogFooter>
+                                <Button onClick={handleEditProduct}>Save changes</Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                          <Button variant="destructive" size="sm" onClick={() => handleRemoveProduct(product.id)}>
+                            Remove
                           </Button>
-                        </DialogTrigger>
-                        <DialogContent className="bg-white shadow-lg rounded-lg p-6">
-                          <DialogHeader>
-                            <DialogTitle className="text-black">Edit Product</DialogTitle>
-                            <DialogDescription>Make changes to the product details here.</DialogDescription>
-                          </DialogHeader>
-                          <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-4 items-center gap-4">
-                              <Label htmlFor="name" className="text-right text-black">
-                                Name
-                              </Label>
-                              <Input
-                                id="name"
-                                value={editingProduct?.name || ""}
-                                onChange={(e) => setEditingProduct((prev) => ({ ...prev, name: e.target.value }))}
-                                className="col-span-3 text-black"
-                              />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                              <Label htmlFor="price" className="text-right text-black">
-                                Price
-                              </Label>
-                              <Input
-                                id="price"
-                                type="number"
-                                value={editingProduct?.price || ""}
-                                onChange={(e) =>
-                                  setEditingProduct((prev) => ({
-                                    ...prev,
-                                    price: Number.parseFloat(e.target.value),
-                                  }))
-                                }
-                                className="col-span-3 text-black"
-                              />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                              <Label htmlFor="quantity" className="text-right text-black">
-                                Quantity
-                              </Label>
-                              <Input
-                                id="quantity"
-                                type="number"
-                                value={editingProduct?.quantity || ""}
-                                onChange={(e) =>
-                                  setEditingProduct((prev) => ({
-                                    ...prev,
-                                    quantity: Number.parseInt(e.target.value),
-                                  }))
-                                }
-                                className="col-span-3 text-black"
-                              />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                              <Label htmlFor="type" className="text-right text-black">
-                                Type
-                              </Label>
-                              <Select
-                                onValueChange={(value) => setEditingProduct((prev) => ({ ...prev, type: value }))}
-                                defaultValue={editingProduct?.type}
-                              >
-                                <SelectTrigger className="col-span-3 text-black">
-                                  <SelectValue placeholder="Select type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {productTypes.map((type) => (
-                                    <SelectItem key={type} value={type}>
-                                      {type}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                          <DialogFooter>
-                            <Button onClick={handleEditProduct}>Save changes</Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                      <Button variant="destructive" onClick={() => handleRemoveProduct(product.id)}>
-                        Remove
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="product-types">
+          <Card>
+            <CardHeader>
+              <CardTitle>Product Type Management</CardTitle>
+              <CardDescription>Add, edit, or remove product types</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row gap-2 mb-4">
+                <Input
+                  placeholder="New Product Type"
+                  value={newProductType}
+                  onChange={(e) => setNewProductType(e.target.value)}
+                  className="flex-grow"
+                />
+                <Button onClick={handleAddProductType}>Add Type</Button>
+              </div>
+              <ScrollArea className="h-[300px] w-full">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Type</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {productTypes.map((type) => (
+                      <TableRow key={type}>
+                        <TableCell className="font-medium">{type}</TableCell>
+                        <TableCell className="text-right">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm" className="mr-2">
+                                Edit
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[425px]">
+                              <DialogHeader>
+                                <DialogTitle>Edit Product Type</DialogTitle>
+                                <DialogDescription>Change the name of the product type here.</DialogDescription>
+                              </DialogHeader>
+                              <div className="grid gap-4 py-4">
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                  <Label htmlFor="newTypeName" className="text-right">
+                                    New Name
+                                  </Label>
+                                  <Input
+                                    id="newTypeName"
+                                    value={editingProductType?.newName || ""}
+                                    onChange={(e) =>
+                                      setEditingProductType((prev) => ({ ...prev, newName: e.target.value }))
+                                    }
+                                    className="col-span-3"
+                                  />
+                                </div>
+                              </div>
+                              <DialogFooter>
+                                <Button onClick={handleEditProductType}>Save changes</Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                          <Button variant="destructive" size="sm" onClick={() => handleRemoveProductType(type)}>
+                            Remove
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="contact">
+          <Card>
+            <CardHeader>
+              <CardTitle>Contact Form Submissions</CardTitle>
+              <CardDescription>View messages from the contact form</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[400px] w-full">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Message</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {contactSubmissions.map((submission) => (
+                      <TableRow key={submission.id}>
+                        <TableCell className="font-medium">{submission.name}</TableCell>
+                        <TableCell>{submission.email}</TableCell>
+                        <TableCell>{submission.phone}</TableCell>
+                        <TableCell>{submission.message}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
