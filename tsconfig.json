@@ -33,7 +33,7 @@
     "**/*.tsx",
     "next-env.d.ts",
     ".next/types/**/*.ts"
-  ],
+, "lib/models/User.js"  ],
   "exclude": [
     "node_modules"
   ]

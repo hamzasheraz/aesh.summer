@@ -33,17 +33,17 @@ export default function CartIcon() {
             className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg py-2 z-10"
           >
             {cart.length === 0 ? (
-              <p className="text-center py-4">Your cart is empty</p>
+              <p className="text-center py-4 text-black">Your cart is empty</p>
             ) : (
               <>
                 {cart.map((item) => (
                   <div key={item.id} className="flex justify-between items-center px-4 py-2">
-                    <span className="font-semibold">{item.name}</span>
+                    <span className="font-semibold text-black">{item.name}</span>
                     <div className="flex items-center space-x-2">
                       <button onClick={() => decreaseQuantity(item.id)} className="text-gray-500 hover:text-gray-700">
                         <Minus size={16} />
                       </button>
-                      <span>{item.quantity}</span>
+                      <span className="text-black">{item.quantity}</span>
                       <button onClick={() => increaseQuantity(item.id)} className="text-gray-500 hover:text-gray-700">
                         <Plus size={16} />
                       </button>
@@ -54,7 +54,7 @@ export default function CartIcon() {
                   </div>
                 ))}
                 <div className="border-t mt-2 pt-2 px-4">
-                  <p className="font-bold">Total: ${total.toFixed(2)}</p>
+                  <p className="font-bold text-black">Total: ${total.toFixed(2)}</p>
                 </div>
                 <Link
                   href="/checkout"

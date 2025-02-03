@@ -41,8 +41,8 @@ export default function Home() {
               objectFit="cover"
               className="absolute inset-0"
             />
-            <div className="absolute top-2 right-40">
-              <h2 className={`text-5xl md:text-6xl font-bold text-white tracking-wider ${playfair.className}`}>AESH</h2>
+            <div className="absolute top-4 right-2">
+              <h2 className={`text-5xl md:text-8xl font-bold text-white tracking-wider ${playfair.className}`}>AESH</h2>
             </div>
           </div>
         </motion.div>
