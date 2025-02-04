@@ -62,7 +62,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } else if (req.method === "DELETE") {
     try {
       const { id } = req.body;
-
       // Check if ID is provided
       if (!id) {
         return res.status(400).json({ success: false, message: "ID is required" });
@@ -75,8 +74,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Delete the product type
-      await existingType.remove();
-
+      await ProductType.findByIdAndDelete(id); 
       return res.status(200).json({ success: true, message: "Product type deleted" });
     } catch (error) {
       return res.status(500).json({ success: false, message: "Server error", error });

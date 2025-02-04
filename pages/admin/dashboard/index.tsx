@@ -192,11 +192,63 @@ export default function AdminDashboard() {
   };
 
   const handleAddProductType = async () => {
-    if (newProductType && !productTypes.some(type => type.name === newProductType)) {
+    if (
+      newProductType &&
+      !productTypes.some((type) => type.name === newProductType)
+    ) {
       const response = await fetch("/api/product-type", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newProductType }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        setError(data.message);
+        return;
+      }
+
+      const data = await response.json();
+      // Assuming 'data.data' contains the new product type object from the backend.
+      setProductTypes([...productTypes, data.data]);
+      setNewProductType(""); // Clear the input field
+    }
+  };
+
+  const handleEditProductType = async () => {
+    if (editingProductType?.newName && editingProductType?.id) {
+      console.log(editingProductType);
+      const response = await fetch("/api/product-type", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingProductType.id,
+          newName: editingProductType.newName,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        setError(data.message);
+        return;
+      }
+
+      const data = await response.json();
+      setProductTypes(
+        productTypes.map((type) =>
+          type._id === data.data._id ? data.data : type
+        )
+      );
+      setEditingProductType(null); // Close the edit dialog
+    }
+  };
+
+  const handleRemoveProductType = async (id) => {
+    try {
+      const response = await fetch("/api/product-type", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }), // Send the ID to delete
       });
   
       if (!response.ok) {
@@ -205,29 +257,11 @@ export default function AdminDashboard() {
         return;
       }
   
-      const data = await response.json();
-      
-      // Assuming 'data.data' contains the new product type object from the backend.
-      setProductTypes([...productTypes, { name: newProductType }]);
-      setNewProductType(""); // Clear the input field
+      // Remove from state after successful deletion
+      setProductTypes((prev) => prev.filter((t) => t._id !== id));
+    } catch (error) {
+      setError("Failed to delete product type");
     }
-  };
-  
-  const handleEditProductType = () => {
-    if (editingProductType) {
-      setProductTypes(
-        productTypes.map((type) =>
-          type === editingProductType.oldName
-            ? editingProductType.newName
-            : type
-        )
-      );
-      setEditingProductType(null);
-    }
-  };
-
-  const handleRemoveProductType = (type) => {
-    setProductTypes(productTypes.filter((t) => t !== type));
   };
 
   const handleChangeOrderStatus = (id, newStatus) => {
@@ -390,7 +424,7 @@ export default function AdminDashboard() {
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {productTypes.map((type,idx) => (
+                    {productTypes.map((type, idx) => (
                       <SelectItem key={idx} value={type.name}>
                         {type.name}
                       </SelectItem>
@@ -575,7 +609,7 @@ export default function AdminDashboard() {
                   </TableHeader>
                   <TableBody>
                     {productTypes && productTypes.length > 0 ? (
-                      productTypes?.map((type) => (
+                      productTypes.map((type) => (
                         <TableRow key={type._id}>
                           <TableCell className="font-medium">
                             {type.name}
@@ -587,13 +621,22 @@ export default function AdminDashboard() {
                                   variant="outline"
                                   size="sm"
                                   className="mr-2"
+                                  onClick={
+                                    () =>
+                                      setEditingProductType({
+                                        id: type._id,
+                                        newName: type.name,
+                                      }) // Store ID when clicking Edit
+                                  }
                                 >
                                   Edit
                                 </Button>
                               </DialogTrigger>
-                              <DialogContent className="sm:max-w-[425px]">
+                              <DialogContent className="sm:max-w-[425px] bg-white">
                                 <DialogHeader>
-                                  <DialogTitle>Edit Product Type</DialogTitle>
+                                  <DialogTitle className="text-black">
+                                    Edit Product Type
+                                  </DialogTitle>
                                   <DialogDescription>
                                     Change the name of the product type here.
                                   </DialogDescription>
@@ -602,7 +645,7 @@ export default function AdminDashboard() {
                                   <div className="grid grid-cols-4 items-center gap-4">
                                     <Label
                                       htmlFor="newTypeName"
-                                      className="text-right"
+                                      className="text-right text-black"
                                     >
                                       New Name
                                     </Label>
@@ -615,7 +658,7 @@ export default function AdminDashboard() {
                                           newName: e.target.value,
                                         }))
                                       }
-                                      className="col-span-3"
+                                      className="col-span-3 text-black"
                                     />
                                   </div>
                                 </div>
