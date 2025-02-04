@@ -87,20 +87,12 @@ const mockProducts = [
   },
 ];
 
-const mockProductTypes = [
-  "Dresses",
-  "Tops",
-  "Bottoms",
-  "Swimwear",
-  "Accessories",
-];
-
 export default function AdminDashboard() {
   const { isLoggedIn, logout } = useAuth();
   const router = useRouter();
   const [orders, setOrders] = useState(mockOrders);
   const [products, setProducts] = useState(mockProducts);
-  const [productTypes, setProductTypes] = useState(mockProductTypes);
+  const [productTypes, setProductTypes] = useState([]);
   const [contactSubmissions, setContactSubmissions] = useState(null);
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -115,6 +107,18 @@ export default function AdminDashboard() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const fetchProductTypes = async () => {
+      try {
+        const response = await fetch("/api/product-type"); // ✅ Fetch from backend
+        if (!response.ok) {
+          throw new Error("Failed to fetch product types");
+        }
+        const data = await response.json();
+        setProductTypes(data.data); // ✅ Set the fetched data
+      } catch (err) {
+        setError("Error loading product types");
+      }
+    };
     const fetchContactSubmissions = async () => {
       try {
         const response = await fetch("/api/contact-details"); // ✅ Fetch from backend
@@ -138,6 +142,7 @@ export default function AdminDashboard() {
         setError("An error occurred while checking authentication.");
       } finally {
         fetchContactSubmissions();
+        fetchProductTypes();
         setIsLoading(false);
       }
     };
@@ -186,13 +191,28 @@ export default function AdminDashboard() {
     setProducts(products.filter((product) => product.id !== id));
   };
 
-  const handleAddProductType = () => {
-    if (newProductType && !productTypes.includes(newProductType)) {
-      setProductTypes([...productTypes, newProductType]);
-      setNewProductType("");
+  const handleAddProductType = async () => {
+    if (newProductType && !productTypes.some(type => type.name === newProductType)) {
+      const response = await fetch("/api/product-type", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newProductType }),
+      });
+  
+      if (!response.ok) {
+        const data = await response.json();
+        setError(data.message);
+        return;
+      }
+  
+      const data = await response.json();
+      
+      // Assuming 'data.data' contains the new product type object from the backend.
+      setProductTypes([...productTypes, { name: newProductType }]);
+      setNewProductType(""); // Clear the input field
     }
   };
-
+  
   const handleEditProductType = () => {
     if (editingProductType) {
       setProductTypes(
@@ -370,9 +390,9 @@ export default function AdminDashboard() {
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {productTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
+                    {productTypes.map((type,idx) => (
+                      <SelectItem key={idx} value={type.name}>
+                        {type.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -554,65 +574,78 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {productTypes.map((type) => (
-                      <TableRow key={type}>
-                        <TableCell className="font-medium">{type}</TableCell>
-                        <TableCell className="text-right">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="mr-2"
-                              >
-                                Edit
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[425px]">
-                              <DialogHeader>
-                                <DialogTitle>Edit Product Type</DialogTitle>
-                                <DialogDescription>
-                                  Change the name of the product type here.
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="grid gap-4 py-4">
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                  <Label
-                                    htmlFor="newTypeName"
-                                    className="text-right"
-                                  >
-                                    New Name
-                                  </Label>
-                                  <Input
-                                    id="newTypeName"
-                                    value={editingProductType?.newName || ""}
-                                    onChange={(e) =>
-                                      setEditingProductType((prev) => ({
-                                        ...prev,
-                                        newName: e.target.value,
-                                      }))
-                                    }
-                                    className="col-span-3"
-                                  />
-                                </div>
-                              </div>
-                              <DialogFooter>
-                                <Button onClick={handleEditProductType}>
-                                  Save changes
+                    {productTypes && productTypes.length > 0 ? (
+                      productTypes?.map((type) => (
+                        <TableRow key={type._id}>
+                          <TableCell className="font-medium">
+                            {type.name}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="mr-2"
+                                >
+                                  Edit
                                 </Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleRemoveProductType(type)}
-                          >
-                            Remove
-                          </Button>
+                              </DialogTrigger>
+                              <DialogContent className="sm:max-w-[425px]">
+                                <DialogHeader>
+                                  <DialogTitle>Edit Product Type</DialogTitle>
+                                  <DialogDescription>
+                                    Change the name of the product type here.
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="grid gap-4 py-4">
+                                  <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label
+                                      htmlFor="newTypeName"
+                                      className="text-right"
+                                    >
+                                      New Name
+                                    </Label>
+                                    <Input
+                                      id="newTypeName"
+                                      value={editingProductType?.newName || ""}
+                                      onChange={(e) =>
+                                        setEditingProductType((prev) => ({
+                                          ...prev,
+                                          newName: e.target.value,
+                                        }))
+                                      }
+                                      className="col-span-3"
+                                    />
+                                  </div>
+                                </div>
+                                <DialogFooter>
+                                  <Button onClick={handleEditProductType}>
+                                    Save changes
+                                  </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleRemoveProductType(type._id)}
+                            >
+                              Remove
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell
+                          colSpan={2}
+                          className="text-center text-gray-500"
+                        >
+                          No product types available.
                         </TableCell>
                       </TableRow>
-                    ))}
+                    )}
                   </TableBody>
                 </Table>
               </ScrollArea>

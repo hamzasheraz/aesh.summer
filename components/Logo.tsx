@@ -19,7 +19,7 @@ export default function Logo() {
           </linearGradient>
         </defs>
       </svg>
-      <span className="text-2xl font-bold text-white">Aesh.Summer</span>
+      <span className="text-2xl font-bold text-white">Aesh</span>
     </motion.div>
   )
 }

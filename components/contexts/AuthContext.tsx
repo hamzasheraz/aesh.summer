@@ -17,7 +17,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Check if user is logged in on component mount
     const checkLoginStatus = () => {
-      const loggedIn = localStorage.getItem("isLoggedIn") === "true"
+      const loggedIn = sessionStorage.getItem("isLoggedIn") === "true"
       setIsLoggedIn(loggedIn)
     }
 
@@ -45,7 +45,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await response.json();
       if (data.message === "Login successful") {
         setIsLoggedIn(true);  // Update the login state
-  
+        
+        // Store the login status in sessionStorage
+        sessionStorage.setItem("isLoggedIn", "true");
+
         // Optionally redirect user to dashboard or another page
         // e.g., window.location.href = "/dashboard";
   
@@ -58,11 +61,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return false;
     }
   };
-  
 
   const logout = () => {
     setIsLoggedIn(false)
-    localStorage.removeItem("isLoggedIn")
+    sessionStorage.removeItem("isLoggedIn") // Remove login status from sessionStorage
   }
 
   return <AuthContext.Provider value={{ isLoggedIn, login, logout }}>{children}</AuthContext.Provider>
@@ -75,4 +77,3 @@ export function useAuth() {
   }
   return context
 }
-
