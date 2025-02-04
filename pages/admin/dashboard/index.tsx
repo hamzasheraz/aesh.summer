@@ -69,29 +69,11 @@ const mockOrders = [
   },
 ];
 
-const mockProducts = [
-  { id: 1, name: "Summer Dress", price: 49.99, quantity: 50, type: "Dresses" },
-  {
-    id: 2,
-    name: "Beach Hat",
-    price: 24.99,
-    quantity: 100,
-    type: "Accessories",
-  },
-  {
-    id: 3,
-    name: "Sunglasses",
-    price: 39.99,
-    quantity: 75,
-    type: "Accessories",
-  },
-];
-
 export default function AdminDashboard() {
   const { isLoggedIn, logout } = useAuth();
   const router = useRouter();
   const [orders, setOrders] = useState(mockOrders);
-  const [products, setProducts] = useState(mockProducts);
+  const [products, setProducts] = useState([]);
   const [productTypes, setProductTypes] = useState([]);
   const [contactSubmissions, setContactSubmissions] = useState(null);
   const [newProduct, setNewProduct] = useState({
@@ -107,6 +89,18 @@ export default function AdminDashboard() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const getProducts = async () => {
+      try {
+        const response = await fetch("/api/product-management");
+        if (!response.ok) {
+          throw new Error("Failed to fetch products");
+        }
+        const data = await response.json();
+        setProducts(data.data); // ✅ Set the fetched data
+      } catch (err) {
+        setError("Error loading products");
+      }
+    };
     const fetchProductTypes = async () => {
       try {
         const response = await fetch("/api/product-type"); // ✅ Fetch from backend
@@ -143,6 +137,7 @@ export default function AdminDashboard() {
       } finally {
         fetchContactSubmissions();
         fetchProductTypes();
+        getProducts();
         setIsLoading(false);
       }
     };
@@ -155,24 +150,46 @@ export default function AdminDashboard() {
     router.push("/admin/login");
   };
 
-  const handleAddProduct = () => {
+  const handleAddProduct = async () => {
     if (
       newProduct.name &&
       newProduct.price &&
       newProduct.quantity &&
-      newProduct.type
+      newProduct.type &&
+      newProduct.image
     ) {
-      setProducts([
-        ...products,
-        {
-          id: products.length + 1,
-          name: newProduct.name,
-          price: Number.parseFloat(newProduct.price),
-          quantity: Number.parseInt(newProduct.quantity),
-          type: newProduct.type,
-        },
-      ]);
-      setNewProduct({ name: "", price: "", quantity: "", type: "" });
+      try {
+        // Create FormData to send both product data and image
+        const formData = new FormData();
+        formData.append("name", newProduct.name);
+        formData.append("price", newProduct.price);
+        formData.append("quantity", newProduct.quantity);
+        formData.append("type", newProduct.type);
+        formData.append("image", newProduct.image); // Append the image file
+  
+        const response = await fetch("/api/products", {
+          method: "POST",
+          body: formData, // Send FormData containing the image
+        });
+  
+        if (!response.ok) {
+          throw new Error("Failed to add product");
+        }
+  
+        const data = await response.json();
+  
+        // If successful, add the new product to the state
+        setProducts((prevProducts) => [...prevProducts, data.product]);
+  
+        // Reset new product fields
+        setNewProduct({ name: "", price: "", quantity: "", type: "", image: null });
+      } catch (err) {
+        // Set error state for display
+        setError("An error occurred while adding the product.");
+        console.error("Error adding product:", err);
+      }
+    } else {
+      setError("Please fill out all fields.");
     }
   };
 
@@ -250,13 +267,13 @@ export default function AdminDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }), // Send the ID to delete
       });
-  
+
       if (!response.ok) {
         const data = await response.json();
         setError(data.message);
         return;
       }
-  
+
       // Remove from state after successful deletion
       setProductTypes((prev) => prev.filter((t) => t._id !== id));
     } catch (error) {
@@ -278,6 +295,13 @@ export default function AdminDashboard() {
         order.id === id ? { ...order, status: "Cancelled" } : order
       )
     );
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setNewProduct({ ...newProduct, image: file });
+    }
   };
 
   if (isLoading) {
@@ -404,7 +428,10 @@ export default function AdminDashboard() {
                   placeholder="Price"
                   value={newProduct.price}
                   onChange={(e) =>
-                    setNewProduct({ ...newProduct, price: e.target.value })
+                    setNewProduct({
+                      ...newProduct,
+                      price: Number(e.target.value),
+                    })
                   }
                 />
                 <Input
@@ -412,25 +439,33 @@ export default function AdminDashboard() {
                   placeholder="Quantity"
                   value={newProduct.quantity}
                   onChange={(e) =>
-                    setNewProduct({ ...newProduct, quantity: e.target.value })
+                    setNewProduct({
+                      ...newProduct,
+                      quantity: Number(e.target.value),
+                    })
                   }
                 />
                 <Select
-                  onValueChange={(value) =>
-                    setNewProduct({ ...newProduct, type: value })
+                  onValueChange={
+                    (value) => setNewProduct({ ...newProduct, type: value }) // Store type ID instead of name
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {productTypes.map((type, idx) => (
-                      <SelectItem key={idx} value={type.name}>
+                    {productTypes.map((type) => (
+                      <SelectItem key={type._id} value={type._id}>
                         {type.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                />
                 <Button onClick={handleAddProduct} className="w-full">
                   Add Product
                 </Button>
@@ -447,133 +482,162 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {products.map((product) => (
-                      <TableRow key={product.id}>
-                        <TableCell className="font-medium">
-                          {product.name}
-                        </TableCell>
-                        <TableCell>${product.price.toFixed(2)}</TableCell>
-                        <TableCell>{product.quantity}</TableCell>
-                        <TableCell>{product.type}</TableCell>
-                        <TableCell className="text-right">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="mr-2"
-                              >
-                                Edit
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[425px]">
-                              <DialogHeader>
-                                <DialogTitle>Edit Product</DialogTitle>
-                                <DialogDescription>
-                                  Make changes to the product details here.
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="grid gap-4 py-4">
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                  <Label htmlFor="name" className="text-right">
-                                    Name
-                                  </Label>
-                                  <Input
-                                    id="name"
-                                    value={editingProduct?.name || ""}
-                                    onChange={(e) =>
-                                      setEditingProduct((prev) => ({
-                                        ...prev,
-                                        name: e.target.value,
-                                      }))
-                                    }
-                                    className="col-span-3"
-                                  />
-                                </div>
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                  <Label htmlFor="price" className="text-right">
-                                    Price
-                                  </Label>
-                                  <Input
-                                    id="price"
-                                    type="number"
-                                    value={editingProduct?.price || ""}
-                                    onChange={(e) =>
-                                      setEditingProduct((prev) => ({
-                                        ...prev,
-                                        price: Number.parseFloat(
-                                          e.target.value
-                                        ),
-                                      }))
-                                    }
-                                    className="col-span-3"
-                                  />
-                                </div>
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                  <Label
-                                    htmlFor="quantity"
-                                    className="text-right"
-                                  >
-                                    Quantity
-                                  </Label>
-                                  <Input
-                                    id="quantity"
-                                    type="number"
-                                    value={editingProduct?.quantity || ""}
-                                    onChange={(e) =>
-                                      setEditingProduct((prev) => ({
-                                        ...prev,
-                                        quantity: Number.parseInt(
-                                          e.target.value
-                                        ),
-                                      }))
-                                    }
-                                    className="col-span-3"
-                                  />
-                                </div>
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                  <Label htmlFor="type" className="text-right">
-                                    Type
-                                  </Label>
-                                  <Select
-                                    onValueChange={(value) =>
-                                      setEditingProduct((prev) => ({
-                                        ...prev,
-                                        type: value,
-                                      }))
-                                    }
-                                    defaultValue={editingProduct?.type}
-                                  >
-                                    <SelectTrigger className="col-span-3">
-                                      <SelectValue placeholder="Select type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {productTypes.map((type) => (
-                                        <SelectItem key={type} value={type}>
-                                          {type}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </div>
-                              <DialogFooter>
-                                <Button onClick={handleEditProduct}>
-                                  Save changes
+                    {products.length > 0 ? (
+                      products.map((product) => (
+                        <TableRow key={product._id}>
+                          <TableCell className="font-medium">
+                            {product.name}
+                          </TableCell>
+                          <TableCell>${product.price.toFixed(2)}</TableCell>
+                          <TableCell>{product.quantity}</TableCell>
+                          <TableCell>
+                            {product.type?.name || "Unknown"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="mr-2"
+                                  onClick={() =>
+                                    setEditingProduct({
+                                      ...product,
+                                      type: product.type?._id,
+                                    })
+                                  }
+                                >
+                                  Edit
                                 </Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleRemoveProduct(product.id)}
-                          >
-                            Remove
-                          </Button>
+                              </DialogTrigger>
+                              <DialogContent className="sm:max-w-[425px] bg-white">
+                                <DialogHeader>
+                                  <DialogTitle className="text-black">
+                                    Edit Product
+                                  </DialogTitle>
+                                  <DialogDescription>
+                                    Make changes to the product details here.
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="grid gap-4 py-4">
+                                  <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label
+                                      htmlFor="name"
+                                      className="text-right text-black"
+                                    >
+                                      Name
+                                    </Label>
+                                    <Input
+                                      id="name"
+                                      value={editingProduct?.name || ""}
+                                      onChange={(e) =>
+                                        setEditingProduct((prev) => ({
+                                          ...prev,
+                                          name: e.target.value,
+                                        }))
+                                      }
+                                      className="col-span-3 text-black"
+                                    />
+                                  </div>
+                                  <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label
+                                      htmlFor="price"
+                                      className="text-right text-black"
+                                    >
+                                      Price
+                                    </Label>
+                                    <Input
+                                      id="price"
+                                      type="number"
+                                      value={editingProduct?.price || ""}
+                                      onChange={(e) =>
+                                        setEditingProduct((prev) => ({
+                                          ...prev,
+                                          price: Number(e.target.value),
+                                        }))
+                                      }
+                                      className="col-span-3 text-black"
+                                    />
+                                  </div>
+                                  <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label
+                                      htmlFor="quantity"
+                                      className="text-right text-black"
+                                    >
+                                      Quantity
+                                    </Label>
+                                    <Input
+                                      id="quantity"
+                                      type="number"
+                                      value={editingProduct?.quantity || ""}
+                                      onChange={(e) =>
+                                        setEditingProduct((prev) => ({
+                                          ...prev,
+                                          quantity: Number(e.target.value),
+                                        }))
+                                      }
+                                      className="col-span-3 text-black"
+                                    />
+                                  </div>
+                                  <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label
+                                      htmlFor="type"
+                                      className="text-right text-black"
+                                    >
+                                      Type
+                                    </Label>
+                                    <Select
+                                      onValueChange={(value) =>
+                                        setEditingProduct((prev) => ({
+                                          ...prev,
+                                          type: value,
+                                        }))
+                                      }
+                                      defaultValue={editingProduct?.type}
+                                    >
+                                      <SelectTrigger className="col-span-3 text-black">
+                                        <SelectValue placeholder="Select type" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {productTypes.map((type) => (
+                                          <SelectItem
+                                            key={type._id}
+                                            value={type._id}
+                                          >
+                                            {type.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                                <DialogFooter>
+                                  <Button onClick={handleEditProduct}>
+                                    Save changes
+                                  </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleRemoveProduct(product._id)}
+                            >
+                              Remove
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell
+                          colSpan={5}
+                          className="text-center text-gray-500"
+                        >
+                          No products available.
                         </TableCell>
                       </TableRow>
-                    ))}
+                    )}
                   </TableBody>
                 </Table>
               </ScrollArea>
