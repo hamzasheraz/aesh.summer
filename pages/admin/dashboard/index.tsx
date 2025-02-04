@@ -1,14 +1,33 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@/components/contexts/AuthContext"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -17,10 +36,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ScrollArea } from "@/components/ui/scroll-area"
+} from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Updated mock data for orders
 const mockOrders = [
@@ -48,72 +67,96 @@ const mockOrders = [
     total: 79.99,
     status: "Shipped",
   },
-]
+];
 
 const mockProducts = [
   { id: 1, name: "Summer Dress", price: 49.99, quantity: 50, type: "Dresses" },
-  { id: 2, name: "Beach Hat", price: 24.99, quantity: 100, type: "Accessories" },
-  { id: 3, name: "Sunglasses", price: 39.99, quantity: 75, type: "Accessories" },
-]
-
-const mockProductTypes = ["Dresses", "Tops", "Bottoms", "Swimwear", "Accessories"]
-
-const mockContactSubmissions = [
-  { id: 1, name: "Alice Cooper", email: "alice@example.com", phone: "123-456-7890", message: "I love your products!" },
   {
     id: 2,
-    name: "Bob Dylan",
-    email: "bob@example.com",
-    phone: "098-765-4321",
-    message: "When will you restock beach towels?",
+    name: "Beach Hat",
+    price: 24.99,
+    quantity: 100,
+    type: "Accessories",
   },
   {
     id: 3,
-    name: "Charlie Brown",
-    email: "charlie@example.com",
-    phone: "555-555-5555",
-    message: "Do you offer international shipping?",
+    name: "Sunglasses",
+    price: 39.99,
+    quantity: 75,
+    type: "Accessories",
   },
-]
+];
+
+const mockProductTypes = [
+  "Dresses",
+  "Tops",
+  "Bottoms",
+  "Swimwear",
+  "Accessories",
+];
 
 export default function AdminDashboard() {
-  const { isLoggedIn, logout } = useAuth()
-  const router = useRouter()
-  const [orders, setOrders] = useState(mockOrders)
-  const [products, setProducts] = useState(mockProducts)
-  const [productTypes, setProductTypes] = useState(mockProductTypes)
-  const [contactSubmissions, setContactSubmissions] = useState(mockContactSubmissions)
-  const [newProduct, setNewProduct] = useState({ name: "", price: "", quantity: "", type: "" })
-  const [editingProduct, setEditingProduct] = useState(null)
-  const [newProductType, setNewProductType] = useState("")
-  const [editingProductType, setEditingProductType] = useState(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const { isLoggedIn, logout } = useAuth();
+  const router = useRouter();
+  const [orders, setOrders] = useState(mockOrders);
+  const [products, setProducts] = useState(mockProducts);
+  const [productTypes, setProductTypes] = useState(mockProductTypes);
+  const [contactSubmissions, setContactSubmissions] = useState(null);
+  const [newProduct, setNewProduct] = useState({
+    name: "",
+    price: "",
+    quantity: "",
+    type: "",
+  });
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [newProductType, setNewProductType] = useState("");
+  const [editingProductType, setEditingProductType] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
+    const fetchContactSubmissions = async () => {
+      try {
+        const response = await fetch("/api/contact-details"); // ✅ Fetch from backend
+        if (!response.ok) {
+          throw new Error("Failed to fetch contact submissions");
+        }
+        const data = await response.json();
+        setContactSubmissions(data.data); // ✅ Set the fetched data
+      } catch (err) {
+        setError("Error loading contact submissions");
+      } finally {
+      }
+    };
     const checkAuth = async () => {
-      setIsLoading(true)
+      setIsLoading(true);
       try {
         if (!isLoggedIn) {
-          router.push("/admin/login")
+          router.push("/admin/login");
         }
       } catch (err) {
-        setError("An error occurred while checking authentication.")
+        setError("An error occurred while checking authentication.");
       } finally {
-        setIsLoading(false)
+        fetchContactSubmissions();
+        setIsLoading(false);
       }
-    }
+    };
 
-    checkAuth()
-  }, [isLoggedIn, router])
+    checkAuth();
+  }, [isLoggedIn, router]);
 
   const handleLogout = () => {
-    logout()
-    router.push("/admin/login")
-  }
+    logout();
+    router.push("/admin/login");
+  };
 
   const handleAddProduct = () => {
-    if (newProduct.name && newProduct.price && newProduct.quantity && newProduct.type) {
+    if (
+      newProduct.name &&
+      newProduct.price &&
+      newProduct.quantity &&
+      newProduct.type
+    ) {
       setProducts([
         ...products,
         {
@@ -123,52 +166,68 @@ export default function AdminDashboard() {
           quantity: Number.parseInt(newProduct.quantity),
           type: newProduct.type,
         },
-      ])
-      setNewProduct({ name: "", price: "", quantity: "", type: "" })
+      ]);
+      setNewProduct({ name: "", price: "", quantity: "", type: "" });
     }
-  }
+  };
 
   const handleEditProduct = () => {
     if (editingProduct) {
-      setProducts(products.map((product) => (product.id === editingProduct.id ? editingProduct : product)))
-      setEditingProduct(null)
+      setProducts(
+        products.map((product) =>
+          product.id === editingProduct.id ? editingProduct : product
+        )
+      );
+      setEditingProduct(null);
     }
-  }
+  };
 
   const handleRemoveProduct = (id) => {
-    setProducts(products.filter((product) => product.id !== id))
-  }
+    setProducts(products.filter((product) => product.id !== id));
+  };
 
   const handleAddProductType = () => {
     if (newProductType && !productTypes.includes(newProductType)) {
-      setProductTypes([...productTypes, newProductType])
-      setNewProductType("")
+      setProductTypes([...productTypes, newProductType]);
+      setNewProductType("");
     }
-  }
+  };
 
   const handleEditProductType = () => {
     if (editingProductType) {
       setProductTypes(
-        productTypes.map((type) => (type === editingProductType.oldName ? editingProductType.newName : type)),
-      )
-      setEditingProductType(null)
+        productTypes.map((type) =>
+          type === editingProductType.oldName
+            ? editingProductType.newName
+            : type
+        )
+      );
+      setEditingProductType(null);
     }
-  }
+  };
 
   const handleRemoveProductType = (type) => {
-    setProductTypes(productTypes.filter((t) => t !== type))
-  }
+    setProductTypes(productTypes.filter((t) => t !== type));
+  };
 
   const handleChangeOrderStatus = (id, newStatus) => {
-    setOrders(orders.map((order) => (order.id === id ? { ...order, status: newStatus } : order)))
-  }
+    setOrders(
+      orders.map((order) =>
+        order.id === id ? { ...order, status: newStatus } : order
+      )
+    );
+  };
 
   const handleCancelOrder = (id) => {
-    setOrders(orders.map((order) => (order.id === id ? { ...order, status: "Cancelled" } : order)))
-  }
+    setOrders(
+      orders.map((order) =>
+        order.id === id ? { ...order, status: "Cancelled" } : order
+      )
+    );
+  };
 
   if (isLoading) {
-    return <div className="container mx-auto p-4">Loading...</div>
+    return <div className="container mx-auto p-4">Loading...</div>;
   }
 
   if (error) {
@@ -179,13 +238,15 @@ export default function AdminDashboard() {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       </div>
-    )
+    );
   }
 
   return (
     <div className="container mx-auto p-4">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-0">Admin Dashboard</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-0">
+          Admin Dashboard
+        </h1>
         <Button onClick={handleLogout}>Logout</Button>
       </div>
 
@@ -220,7 +281,9 @@ export default function AdminDashboard() {
                   <TableBody>
                     {orders.map((order) => (
                       <TableRow key={order.id}>
-                        <TableCell className="font-medium">{order.id}</TableCell>
+                        <TableCell className="font-medium">
+                          {order.id}
+                        </TableCell>
                         <TableCell>{order.customer}</TableCell>
                         <TableCell>{order.email}</TableCell>
                         <TableCell>{order.address}</TableCell>
@@ -228,17 +291,25 @@ export default function AdminDashboard() {
                         <TableCell>{order.status}</TableCell>
                         <TableCell className="text-right">
                           <Select
-                            onValueChange={(value) => handleChangeOrderStatus(order.id, value)}
+                            onValueChange={(value) =>
+                              handleChangeOrderStatus(order.id, value)
+                            }
                             defaultValue={order.status}
                           >
                             <SelectTrigger className="w-[180px]">
                               <SelectValue placeholder="Change status" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="Processing">Processing</SelectItem>
+                              <SelectItem value="Processing">
+                                Processing
+                              </SelectItem>
                               <SelectItem value="Shipped">Shipped</SelectItem>
-                              <SelectItem value="Completed">Completed</SelectItem>
-                              <SelectItem value="Cancelled">Cancelled</SelectItem>
+                              <SelectItem value="Completed">
+                                Completed
+                              </SelectItem>
+                              <SelectItem value="Cancelled">
+                                Cancelled
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                           <Button
@@ -270,21 +341,31 @@ export default function AdminDashboard() {
                 <Input
                   placeholder="Product Name"
                   value={newProduct.name}
-                  onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                  onChange={(e) =>
+                    setNewProduct({ ...newProduct, name: e.target.value })
+                  }
                 />
                 <Input
                   type="number"
                   placeholder="Price"
                   value={newProduct.price}
-                  onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                  onChange={(e) =>
+                    setNewProduct({ ...newProduct, price: e.target.value })
+                  }
                 />
                 <Input
                   type="number"
                   placeholder="Quantity"
                   value={newProduct.quantity}
-                  onChange={(e) => setNewProduct({ ...newProduct, quantity: e.target.value })}
+                  onChange={(e) =>
+                    setNewProduct({ ...newProduct, quantity: e.target.value })
+                  }
                 />
-                <Select onValueChange={(value) => setNewProduct({ ...newProduct, type: value })}>
+                <Select
+                  onValueChange={(value) =>
+                    setNewProduct({ ...newProduct, type: value })
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
@@ -314,21 +395,29 @@ export default function AdminDashboard() {
                   <TableBody>
                     {products.map((product) => (
                       <TableRow key={product.id}>
-                        <TableCell className="font-medium">{product.name}</TableCell>
+                        <TableCell className="font-medium">
+                          {product.name}
+                        </TableCell>
                         <TableCell>${product.price.toFixed(2)}</TableCell>
                         <TableCell>{product.quantity}</TableCell>
                         <TableCell>{product.type}</TableCell>
                         <TableCell className="text-right">
                           <Dialog>
                             <DialogTrigger asChild>
-                              <Button variant="outline" size="sm" className="mr-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="mr-2"
+                              >
                                 Edit
                               </Button>
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-[425px]">
                               <DialogHeader>
                                 <DialogTitle>Edit Product</DialogTitle>
-                                <DialogDescription>Make changes to the product details here.</DialogDescription>
+                                <DialogDescription>
+                                  Make changes to the product details here.
+                                </DialogDescription>
                               </DialogHeader>
                               <div className="grid gap-4 py-4">
                                 <div className="grid grid-cols-4 items-center gap-4">
@@ -338,7 +427,12 @@ export default function AdminDashboard() {
                                   <Input
                                     id="name"
                                     value={editingProduct?.name || ""}
-                                    onChange={(e) => setEditingProduct((prev) => ({ ...prev, name: e.target.value }))}
+                                    onChange={(e) =>
+                                      setEditingProduct((prev) => ({
+                                        ...prev,
+                                        name: e.target.value,
+                                      }))
+                                    }
                                     className="col-span-3"
                                   />
                                 </div>
@@ -353,14 +447,19 @@ export default function AdminDashboard() {
                                     onChange={(e) =>
                                       setEditingProduct((prev) => ({
                                         ...prev,
-                                        price: Number.parseFloat(e.target.value),
+                                        price: Number.parseFloat(
+                                          e.target.value
+                                        ),
                                       }))
                                     }
                                     className="col-span-3"
                                   />
                                 </div>
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                  <Label htmlFor="quantity" className="text-right">
+                                  <Label
+                                    htmlFor="quantity"
+                                    className="text-right"
+                                  >
                                     Quantity
                                   </Label>
                                   <Input
@@ -370,7 +469,9 @@ export default function AdminDashboard() {
                                     onChange={(e) =>
                                       setEditingProduct((prev) => ({
                                         ...prev,
-                                        quantity: Number.parseInt(e.target.value),
+                                        quantity: Number.parseInt(
+                                          e.target.value
+                                        ),
                                       }))
                                     }
                                     className="col-span-3"
@@ -381,7 +482,12 @@ export default function AdminDashboard() {
                                     Type
                                   </Label>
                                   <Select
-                                    onValueChange={(value) => setEditingProduct((prev) => ({ ...prev, type: value }))}
+                                    onValueChange={(value) =>
+                                      setEditingProduct((prev) => ({
+                                        ...prev,
+                                        type: value,
+                                      }))
+                                    }
                                     defaultValue={editingProduct?.type}
                                   >
                                     <SelectTrigger className="col-span-3">
@@ -398,11 +504,17 @@ export default function AdminDashboard() {
                                 </div>
                               </div>
                               <DialogFooter>
-                                <Button onClick={handleEditProduct}>Save changes</Button>
+                                <Button onClick={handleEditProduct}>
+                                  Save changes
+                                </Button>
                               </DialogFooter>
                             </DialogContent>
                           </Dialog>
-                          <Button variant="destructive" size="sm" onClick={() => handleRemoveProduct(product.id)}>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleRemoveProduct(product.id)}
+                          >
                             Remove
                           </Button>
                         </TableCell>
@@ -419,7 +531,9 @@ export default function AdminDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Product Type Management</CardTitle>
-              <CardDescription>Add, edit, or remove product types</CardDescription>
+              <CardDescription>
+                Add, edit, or remove product types
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col sm:flex-row gap-2 mb-4">
@@ -446,36 +560,54 @@ export default function AdminDashboard() {
                         <TableCell className="text-right">
                           <Dialog>
                             <DialogTrigger asChild>
-                              <Button variant="outline" size="sm" className="mr-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="mr-2"
+                              >
                                 Edit
                               </Button>
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-[425px]">
                               <DialogHeader>
                                 <DialogTitle>Edit Product Type</DialogTitle>
-                                <DialogDescription>Change the name of the product type here.</DialogDescription>
+                                <DialogDescription>
+                                  Change the name of the product type here.
+                                </DialogDescription>
                               </DialogHeader>
                               <div className="grid gap-4 py-4">
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                  <Label htmlFor="newTypeName" className="text-right">
+                                  <Label
+                                    htmlFor="newTypeName"
+                                    className="text-right"
+                                  >
                                     New Name
                                   </Label>
                                   <Input
                                     id="newTypeName"
                                     value={editingProductType?.newName || ""}
                                     onChange={(e) =>
-                                      setEditingProductType((prev) => ({ ...prev, newName: e.target.value }))
+                                      setEditingProductType((prev) => ({
+                                        ...prev,
+                                        newName: e.target.value,
+                                      }))
                                     }
                                     className="col-span-3"
                                   />
                                 </div>
                               </div>
                               <DialogFooter>
-                                <Button onClick={handleEditProductType}>Save changes</Button>
+                                <Button onClick={handleEditProductType}>
+                                  Save changes
+                                </Button>
                               </DialogFooter>
                             </DialogContent>
                           </Dialog>
-                          <Button variant="destructive" size="sm" onClick={() => handleRemoveProductType(type)}>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleRemoveProductType(type)}
+                          >
                             Remove
                           </Button>
                         </TableCell>
@@ -491,37 +623,46 @@ export default function AdminDashboard() {
         <TabsContent value="contact">
           <Card>
             <CardHeader>
-              <CardTitle>Contact Form Submissions</CardTitle>
-              <CardDescription>View messages from the contact form</CardDescription>
+              <CardTitle>Contact Submissions</CardTitle>
+              <CardDescription>
+                Messages submitted via the contact form
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-[400px] w-full">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>Message</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {contactSubmissions.map((submission) => (
-                      <TableRow key={submission.id}>
-                        <TableCell className="font-medium">{submission.name}</TableCell>
-                        <TableCell>{submission.email}</TableCell>
-                        <TableCell>{submission.phone}</TableCell>
-                        <TableCell>{submission.message}</TableCell>
+              {contactSubmissions && contactSubmissions.length > 0 ? (
+                <ScrollArea className="h-[400px] w-full">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Message</TableHead>
+                        <TableHead>Date</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
+                    </TableHeader>
+                    <TableBody>
+                      {contactSubmissions.map((submission, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{submission.name}</TableCell>
+                          <TableCell>{submission.email}</TableCell>
+                          <TableCell>{submission.phone}</TableCell>
+                          <TableCell>{submission.message}</TableCell>
+                          <TableCell>
+                            {new Date(submission.createdAt).toLocaleString()}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              ) : (
+                <p>No contact submissions found.</p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }
-
