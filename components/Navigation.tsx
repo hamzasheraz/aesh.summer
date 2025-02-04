@@ -1,13 +1,22 @@
-import { useState } from "react"
-import { Menu, X, ChevronDown } from "lucide-react"
-import Link from "next/link"
-import { motion, AnimatePresence } from "framer-motion"
-
-const productCategories = ["Dresses", "Tops", "Bottoms", "Swimwear", "Accessories"]
+import { useEffect, useState } from "react";
+import { Menu, X, ChevronDown } from "lucide-react";
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Navigation() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isProductsOpen, setIsProductsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false);
+  const [isProductsOpen, setIsProductsOpen] = useState(false);
+  const [productCategories, setProductCategories] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchProductCategories = async () => {
+      const res = await fetch("/api/product-type");
+      const { data } = await res.json();
+      const categories = data.map((category) => category.name);
+      setProductCategories(categories);
+    };
+    fetchProductCategories()  
+  }, []);
 
   return (
     <nav className="relative">
@@ -49,7 +58,10 @@ export default function Navigation() {
         <NavLink href="/contact">Contact</NavLink>
       </div>
       <div className="lg:hidden">
-        <button onClick={() => setIsOpen(!isOpen)} className="text-white p-2 rounded-md hover:bg-blue-600 transition">
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="text-white p-2 rounded-md hover:bg-blue-600 transition"
+        >
           {isOpen ? <X /> : <Menu />}
         </button>
       </div>
@@ -80,7 +92,10 @@ export default function Navigation() {
                     className="pl-4"
                   >
                     {productCategories.map((category) => (
-                      <MobileNavLink key={category} href={`/category/${category.toLowerCase()}`}>
+                      <MobileNavLink
+                        key={category}
+                        href={`/category/${category.toLowerCase()}`}
+                      >
                         {category}
                       </MobileNavLink>
                     ))}
@@ -94,18 +109,33 @@ export default function Navigation() {
         )}
       </AnimatePresence>
     </nav>
-  )
+  );
 }
 
-function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+function NavLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
   return (
-    <Link href={href} className="text-white hover:text-blue-300 transition px-3 py-2 rounded-md hover:bg-blue-600">
+    <Link
+      href={href}
+      className="text-white hover:text-blue-300 transition px-3 py-2 rounded-md hover:bg-blue-600"
+    >
       {children}
     </Link>
-  )
+  );
 }
 
-function MobileNavLink({ href, children }: { href: string; children: React.ReactNode }) {
+function MobileNavLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
   return (
     <Link
       href={href}
@@ -113,6 +143,5 @@ function MobileNavLink({ href, children }: { href: string; children: React.React
     >
       {children}
     </Link>
-  )
+  );
 }
-
