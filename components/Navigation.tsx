@@ -7,15 +7,23 @@ export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const [isProductsOpen, setIsProductsOpen] = useState(false);
   const [productCategories, setProductCategories] = useState<string[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchProductCategories = async () => {
-      const res = await fetch("/api/product-type");
-      const { data } = await res.json();
-      const categories = data.map((category) => category.name);
-      setProductCategories(categories);
+      try {
+        const res = await fetch("/api/product-type");
+        const { data } = await res.json();
+        const categories = data.map((category) => category.name);
+        setProductCategories(categories);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching product categories:", error);
+        setLoading(false);
+      }
     };
-    fetchProductCategories()  
+
+    fetchProductCategories();
   }, []);
 
   return (
@@ -41,15 +49,19 @@ export default function Navigation() {
                 onMouseEnter={() => setIsProductsOpen(true)}
                 onMouseLeave={() => setIsProductsOpen(false)}
               >
-                {productCategories.map((category) => (
-                  <Link
-                    key={category}
-                    href={`/category/${category.toLowerCase()}`}
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-500 hover:text-white transition duration-200"
-                  >
-                    {category}
-                  </Link>
-                ))}
+                {loading ? (
+                  <div className="px-4 py-2 text-sm text-gray-700">Loading...</div>
+                ) : (
+                  productCategories.map((category,idx) => (
+                    <Link
+                      key={idx}
+                      href={`/category/${category}`}
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-500 hover:text-white transition duration-200"
+                    >
+                      {category}
+                    </Link>
+                  ))
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -91,14 +103,18 @@ export default function Navigation() {
                     transition={{ duration: 0.2 }}
                     className="pl-4"
                   >
-                    {productCategories.map((category) => (
-                      <MobileNavLink
-                        key={category}
-                        href={`/category/${category.toLowerCase()}`}
-                      >
-                        {category}
-                      </MobileNavLink>
-                    ))}
+                    {loading ? (
+                      <div className="px-4 py-2 text-sm text-gray-700">Loading...</div>
+                    ) : (
+                      productCategories.map((category) => (
+                        <MobileNavLink
+                          key={category}
+                          href={`/category/${category.toLowerCase()}`}
+                        >
+                          {category}
+                        </MobileNavLink>
+                      ))
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>

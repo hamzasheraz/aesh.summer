@@ -210,9 +210,9 @@ export default function AdminDashboard() {
           },
           body: JSON.stringify(editingProduct),
         });
-  
+
         const data = await response.json();
-        
+
         if (data.success) {
           // After successful edit, update the product list in state
           setProducts((prevProducts) =>
@@ -230,7 +230,6 @@ export default function AdminDashboard() {
       }
     }
   };
-  
 
   const handleRemoveProduct = async (id) => {
     try {
@@ -470,6 +469,7 @@ export default function AdminDashboard() {
                 <Input
                   placeholder="Product Name"
                   value={newProduct.name}
+                  required={true}
                   onChange={(e) =>
                     setNewProduct({ ...newProduct, name: e.target.value })
                   }
@@ -478,6 +478,7 @@ export default function AdminDashboard() {
                   type="number"
                   placeholder="Price"
                   value={newProduct.price}
+                  required={true}
                   onChange={(e) =>
                     setNewProduct({
                       ...newProduct,
@@ -489,6 +490,7 @@ export default function AdminDashboard() {
                   type="number"
                   placeholder="Quantity"
                   value={newProduct.quantity}
+                  required={true}
                   onChange={(e) =>
                     setNewProduct({
                       ...newProduct,
@@ -497,9 +499,10 @@ export default function AdminDashboard() {
                   }
                 />
                 <Select
-                  onValueChange={
-                    (value) => setNewProduct({ ...newProduct, type: value }) // Store type ID instead of name
-                  }
+                  value={newProduct.type || ""} // Default value (empty string means no type selected)
+                  onValueChange={(value) =>
+                    setNewProduct({ ...newProduct, type: value })
+                  } // Update type ID
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
@@ -512,10 +515,12 @@ export default function AdminDashboard() {
                     ))}
                   </SelectContent>
                 </Select>
+
                 <Input
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
+                  required={true}
                 />
                 <Button onClick={handleAddProduct} className="w-full">
                   Add Product
@@ -539,13 +544,16 @@ export default function AdminDashboard() {
                         <TableRow key={product._id}>
                           <TableCell>
                             {product.image ? (
-                              <Image
-                                src={product.image}
-                                alt={product.name}
-                                className="object-cover rounded-md"
-                                width={48}
-                                height={48}
-                              />
+                             <div style={{ position: 'relative', width: 48, height: 48 }}>
+                             <Image
+                               src={product.image}
+                               alt={product.name}
+                               fill // Use fill instead of width and height
+                               objectFit="cover" // Ensures the image covers the container with aspect ratio preserved
+                               className="rounded-md"
+                             />
+                           </div>
+                           
                             ) : (
                               <span className="text-gray-500">No Image</span>
                             )}

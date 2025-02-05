@@ -6,44 +6,70 @@ import { useCart } from "@/components/contexts/CartContext";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Plus, Minus } from "lucide-react";
+import { useParams } from "next/navigation"; // Import useParams
+
+type Product = {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  description: string;
+  category: string;
+};
 
 export default function ProductDisplay() {
-  const [products, setProducts] = useState([]);
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [error, setError] = useState<string | null>(null); // Handle errors
   const { addToCart, removeFromCart, cart, increaseQuantity, decreaseQuantity } = useCart();
+  const params = useParams(); // Get the current route params
+  const category = params?.category as string | undefined; // Get the category from params
 
   useEffect(() => {
-    // Fetch last 6 products from the backend
     const fetchProducts = async () => {
       try {
-        const response = await fetch("/api/last-products");
+        // Determine the API URL based on the presence of a category
+        console.log(category);
+        const response = category
+          ? await fetch(`/api/products?category=${category}`) // Fetch category-specific products
+          : await fetch("/api/last-products"); // Fetch last products for home page
+        
+        if (!response.ok) {
+          // Handle non-OK responses (404, 500, etc.)
+          throw new Error(`Failed to fetch products: ${response.statusText}`);
+        }
+
         const data = await response.json();
+
         if (data.success) {
           setProducts(data.products);
         } else {
-          console.error("Error fetching products:", data.message);
+          setError(data.message); // If API returns failure, display the message
         }
-      } catch (error) {
+      } catch (error: any) {
+        setError(error.message); // Handle fetch errors gracefully
         console.error("Error fetching products:", error);
       }
     };
 
     fetchProducts();
-  }, []);
+  }, [category]); // Re-run when the category changes
 
   const closeModal = () => setSelectedProduct(null);
 
-  const getItemQuantity = (id) => {
+  const getItemQuantity = (id: string) => {
     const item = cart.find((item) => item._id === id);
     return item ? item.quantity : 0;
   };
 
   return (
     <>
+      {error && <p className="text-red-500 text-center">{error}</p>} {/* Show error message */}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {products.map((product) => (
           <motion.div
-            key={product.id}
+            key={product._id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
