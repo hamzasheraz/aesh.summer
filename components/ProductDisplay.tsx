@@ -1,67 +1,42 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Image from "next/image"
-import { useCart } from "@/components/contexts/CartContext"
-import Link from "next/link"
-import { motion } from "framer-motion"
-import { Plus, Minus } from "lucide-react"
-
-const products = [
-  {
-    id: 1,
-    name: "Summer Dress",
-    price: 49.99,
-    image: "/placeholder.svg?height=300&width=300",
-    description: "A light and breezy summer dress perfect for hot days.",
-  },
-  {
-    id: 2,
-    name: "Beach Hat",
-    price: 24.99,
-    image: "/placeholder.svg?height=300&width=300",
-    description: "Stylish and protective beach hat to shield you from the sun.",
-  },
-  {
-    id: 3,
-    name: "Sunglasses",
-    price: 39.99,
-    image: "/placeholder.svg?height=300&width=300",
-    description: "UV-protective sunglasses with a modern design.",
-  },
-  {
-    id: 4,
-    name: "Sandals",
-    price: 34.99,
-    image: "/placeholder.svg?height=300&width=300",
-    description: "Comfortable and durable sandals for beach and casual wear.",
-  },
-  {
-    id: 5,
-    name: "Beach Towel",
-    price: 19.99,
-    image: "/placeholder.svg?height=300&width=300",
-    description: "Large, soft beach towel with a vibrant summer pattern.",
-  },
-  {
-    id: 6,
-    name: "Swimsuit",
-    price: 59.99,
-    image: "/placeholder.svg?height=300&width=300",
-    description: "Flattering and comfortable swimsuit for all your water activities.",
-  },
-]
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import { useCart } from "@/components/contexts/CartContext";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { Plus, Minus } from "lucide-react";
 
 export default function ProductDisplay() {
-  const [selectedProduct, setSelectedProduct] = useState<(typeof products)[0] | null>(null)
-  const { addToCart, removeFromCart, cart, increaseQuantity, decreaseQuantity } = useCart()
+  const [products, setProducts] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const { addToCart, removeFromCart, cart, increaseQuantity, decreaseQuantity } = useCart();
 
-  const closeModal = () => setSelectedProduct(null)
+  useEffect(() => {
+    // Fetch last 6 products from the backend
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch("/api/last-products");
+        const data = await response.json();
+        if (data.success) {
+          setProducts(data.products);
+        } else {
+          console.error("Error fetching products:", data.message);
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      }
+    };
 
-  const getItemQuantity = (id: number) => {
-    const item = cart.find((item) => item.id === id)
-    return item ? item.quantity : 0
-  }
+    fetchProducts();
+  }, []);
+
+  const closeModal = () => setSelectedProduct(null);
+
+  const getItemQuantity = (id) => {
+    const item = cart.find((item) => item.id === id);
+    return item ? item.quantity : 0;
+  };
 
   return (
     <>
@@ -76,7 +51,12 @@ export default function ProductDisplay() {
             onClick={() => setSelectedProduct(product)}
           >
             <div className="relative h-64">
-              <Image src={product.image || "/placeholder.svg"} alt={product.name} layout="fill" objectFit="cover" />
+              <Image
+                src={product.image || "/placeholder.svg"}
+                alt={product.name}
+                layout="fill"
+                objectFit="cover"
+              />
             </div>
             <div className="p-4">
               <h3 className="text-lg font-semibold text-gray-800">{product.name}</h3>
@@ -161,6 +141,5 @@ export default function ProductDisplay() {
         </div>
       )}
     </>
-  )
+  );
 }
-
