@@ -1,23 +1,48 @@
-import { NextApiRequest, NextApiResponse } from "next";
+import type { NextApiRequest, NextApiResponse } from "next";
 import { connectDB } from "@/lib/mongodb";
 import Product from "@/lib/models/Product";
 import ProductType from "@/lib/models/ProductType";
 import multer from "multer";
 import path from "path";
+import { IncomingMessage } from "http";
+import { promisify } from "util";
+import fs from "fs";
 
-const upload = multer({
-    storage: multer.diskStorage({
-      destination: function (req, file, cb) {
-        cb(null, "public/uploads"); // Folder where images will be stored
-      },
-      filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname)); // Use timestamp as the file name
-      },
-    }),
-  }).single("image"); // The field name that contains the image
+export const config = {
+  api: {
+    bodyParser: false, // Disable built-in bodyParser since Multer handles file uploads
+  },
+};
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  await connectDB(); // Ensure DB connection
+// 🔹 Configure Multer for file storage
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "public/uploads");
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}${path.extname(file.originalname)}`);
+  },
+});
+
+const upload = multer({ storage }).single("image");
+const uploadMiddleware = promisify(upload);
+// Define product type
+interface ProductRequest extends IncomingMessage {
+  file?: Express.Multer.File;
+  body: {
+    id?: string;
+    name?: string;
+    price?: number;
+    quantity?: number;
+    type?: string;
+  };
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  await connectDB();
 
   switch (req.method) {
     case "POST":
@@ -30,98 +55,212 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return getProducts(req, res);
     default:
       res.setHeader("Allow", ["POST", "PUT", "DELETE", "GET"]);
-      return res.status(405).json({ success: false, message: `Method ${req.method} not allowed` });
+      return res
+        .status(405)
+        .json({ success: false, message: `Method ${req.method} not allowed` });
   }
 }
 
 // ✅ ADD PRODUCT
-const addProduct = async (req: NextApiRequest, res: NextApiResponse) => {
-    upload(req, res, async (err) => {
-        if (err) {
-          return res.status(500).json({ success: false, message: "Image upload failed", error: err });
-        }
-  
-        const { name, price, quantity, type } = req.body;
-        const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
-  
-        if (!name || !price || !quantity || !type || !imageUrl) {
-          return res.status(400).json({ success: false, message: "All fields are required" });
-        }
-  
-        try {
-          const newProduct = new Product({
-            name,
-            price,
-            quantity,
-            type,
-            image: imageUrl, // Store the image URL
-          });
-  
-          await newProduct.save();
-  
-          return res.status(201).json({ success: true, product: newProduct });
-        } catch (error) {
-          return res.status(500).json({ success: false, message: "Failed to create product", error });
-        }
-      });
-};
-
-// ✅ EDIT PRODUCT
-const editProduct = async (req: NextApiRequest, res: NextApiResponse) => {
+const addProduct = async (req: ProductRequest, res: NextApiResponse) => {
   try {
-    const { id, name, price, quantity, typeId } = req.body;
+    // Handle file upload
+    await uploadMiddleware(req, res);
 
-    // Check if product exists
-    const product = await Product.findById(id);
-    if (!product) {
-      return res.status(404).json({ success: false, message: "Product not found" });
+    const { name, price, quantity, type } = req.body;
+    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+
+    // Ensure all required fields are provided
+    if (!name || !price || !quantity || !type || !imageUrl) {
+      return res
+        .status(400)
+        .json({ success: false, message: "All fields are required" });
     }
 
-    // Check if type exists
-    const productType = await ProductType.findById(typeId);
-    if (!productType) {
-      return res.status(400).json({ success: false, message: "Invalid Product Type" });
-    }
+    // Create new product
+    const newProduct = new Product({
+      name,
+      price: parseFloat(price), // Convert string to number
+      quantity: parseInt(quantity), // Convert string to number
+      type,
+      image: imageUrl,
+    });
 
-    product.name = name || product.name;
-    product.price = price || product.price;
-    product.quantity = quantity || product.quantity;
-    product.type = typeId || product.type;
+    // Save the product to the database
+    await newProduct.save();
 
-    await product.save();
+    // Populate the type field to include the type name
+    const populatedProduct = await Product.findById(newProduct._id).populate(
+      "type",
+      "name"
+    );
 
-    return res.status(200).json({ success: true, data: product });
+    // Return the populated product with type name
+    return res.status(201).json({ success: true, product: populatedProduct });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Server error", error });
+    console.error("Error adding product:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Failed to create product", error });
   }
 };
 
-// ✅ DELETE PRODUCT
-const deleteProduct = async (req: NextApiRequest, res: NextApiResponse) => {
-  try {
-    const { id } = req.body;
+const editProduct = async (req: NextApiRequest, res: NextApiResponse) => {
+  if (req.method === "PUT") {
+    try {
+      // Parse the request body manually
+      const data = await new Promise<any>((resolve, reject) => {
+        let body = "";
+        req.on("data", (chunk) => {
+          body += chunk;
+        });
+        req.on("end", () => {
+          try {
+            resolve(JSON.parse(body)); // Parse the incoming JSON
+          } catch (error) {
+            reject("Failed to parse body");
+          }
+        });
+      });
 
-    // Check if product exists
-    const product = await Product.findById(id);
-    if (!product) {
-      return res.status(404).json({ success: false, message: "Product not found" });
+      const { _id, name, price, quantity, type } = data;
+
+      if (!_id) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Product ID is required" });
+      }
+
+      // Find the product by ID
+      const product = await Product.findById(_id);
+      if (!product) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Product not found" });
+      }
+
+      // Validate type if provided
+      if (type) {
+        const productType = await ProductType.findById(type);
+        if (!productType) {
+          return res.status(400).json({ success: false, message: "Invalid Product Type" });
+        }
+      }
+
+      // Update the product fields
+      product.name = name || product.name;
+      product.price = price || product.price;
+      product.quantity = quantity || product.quantity;
+      product.type = type || product.type;
+
+      // Handle image update (optional)
+      if (data.image && data.image !== product.image) {
+        // Delete old image if new one is uploaded
+        if (product.image) {
+          const imagePath = path.join(process.cwd(), "public", product.image);
+          fs.unlink(imagePath, (err) => {
+            if (err) {
+              console.error("Error deleting image:", err);
+            } else {
+              console.log("Image deleted successfully:", imagePath);
+            }
+          });
+        }
+        // Update the product image path
+        product.image = data.image;
+      }
+
+      // Save the updated product
+      await product.save();
+
+      // Optionally, populate the `type` field to return its name
+      const updatedProduct = await Product.findById(product._id).populate("type", "name");
+
+      return res.status(200).json({ success: true, product: updatedProduct });
+    } catch (error) {
+      console.error("Error editing product:", error);
+      return res.status(500).json({ success: false, message: "Server error", error });
     }
+  } else {
+    return res.status(405).json({ success: false, message: "Method Not Allowed" });
+  }
+};
 
-    await Product.findByIdAndDelete(id);
 
-    return res.status(200).json({ success: true, message: "Product deleted" });
-  } catch (error) {
-    return res.status(500).json({ success: false, message: "Server error", error });
+const deleteProduct = async (req: NextApiRequest, res: NextApiResponse) => {
+  if (req.method === "DELETE") {
+    // Check for DELETE method
+    try {
+      // Parse the request body manually for DELETE
+      const data = await new Promise<any>((resolve, reject) => {
+        let body = "";
+        req.on("data", (chunk) => {
+          body += chunk;
+        });
+        req.on("end", () => {
+          try {
+            resolve(JSON.parse(body)); // Parse the incoming JSON
+          } catch (error) {
+            reject("Failed to parse body");
+          }
+        });
+      });
+
+      const { id } = data;
+      if (!id) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Product ID is required" });
+      }
+
+      // Find the product by ID
+      const product = await Product.findById(id);
+
+      if (!product) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Product not found" });
+      }
+
+         // Delete the image file if it exists
+        if (product.image) {
+          const imagePath = path.join(process.cwd(), "public", product.image);
+          fs.unlink(imagePath, (err) => {
+            if (err) {
+              console.error("Error deleting image:", err);
+            } else {
+              console.log("Image deleted successfully:", imagePath);
+            }
+          });
+        }
+  
+
+      // Delete the product
+      await Product.findByIdAndDelete(id);
+      return res
+        .status(200)
+        .json({ success: true, message: "Product deleted" });
+    } catch (error) {
+      console.error("Server Error:", error); // Log error for debugging
+      return res
+        .status(500)
+        .json({ success: false, message: "Server error", error });
+    }
+  } else {
+    return res
+      .status(405)
+      .json({ success: false, message: "Method Not Allowed" });
   }
 };
 
 // ✅ GET ALL PRODUCTS
 const getProducts = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const products = await Product.find().populate("type", "name"); // Populate type name
-
-    return res.status(200).json({ success: true, data: products });
+    const products = await Product.find().populate("type", "name");
+    return res.status(200).json({ success: true, products });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Server error", error });
+    return res
+      .status(500)
+      .json({ success: false, message: "Server error", error });
   }
 };

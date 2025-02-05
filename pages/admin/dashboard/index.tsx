@@ -40,6 +40,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import Image from "next/image";
 
 // Updated mock data for orders
 const mockOrders = [
@@ -81,6 +82,7 @@ export default function AdminDashboard() {
     price: "",
     quantity: "",
     type: "",
+    image: null,
   });
   const [editingProduct, setEditingProduct] = useState(null);
   const [newProductType, setNewProductType] = useState("");
@@ -96,7 +98,7 @@ export default function AdminDashboard() {
           throw new Error("Failed to fetch products");
         }
         const data = await response.json();
-        setProducts(data.data); // ✅ Set the fetched data
+        setProducts(data.products); // ✅ Set the fetched data
       } catch (err) {
         setError("Error loading products");
       }
@@ -159,30 +161,35 @@ export default function AdminDashboard() {
       newProduct.image
     ) {
       try {
-        // Create FormData to send both product data and image
+        // Create a new FormData object
         const formData = new FormData();
         formData.append("name", newProduct.name);
         formData.append("price", newProduct.price);
         formData.append("quantity", newProduct.quantity);
         formData.append("type", newProduct.type);
         formData.append("image", newProduct.image); // Append the image file
-  
-        const response = await fetch("/api/products", {
+
+        const response = await fetch("/api/product-management", {
           method: "POST",
           body: formData, // Send FormData containing the image
         });
-  
+
         if (!response.ok) {
           throw new Error("Failed to add product");
         }
-  
+
         const data = await response.json();
-  
         // If successful, add the new product to the state
         setProducts((prevProducts) => [...prevProducts, data.product]);
-  
+
         // Reset new product fields
-        setNewProduct({ name: "", price: "", quantity: "", type: "", image: null });
+        setNewProduct({
+          name: "",
+          price: "",
+          quantity: "",
+          type: "",
+          image: null,
+        });
       } catch (err) {
         // Set error state for display
         setError("An error occurred while adding the product.");
@@ -193,19 +200,63 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleEditProduct = () => {
+  const handleEditProduct = async () => {
     if (editingProduct) {
-      setProducts(
-        products.map((product) =>
-          product.id === editingProduct.id ? editingProduct : product
-        )
-      );
-      setEditingProduct(null);
+      try {
+        const response = await fetch(`/api/product-management`, {
+          method: "PUT", // or "PATCH", depending on your API design
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(editingProduct),
+        });
+  
+        const data = await response.json();
+        
+        if (data.success) {
+          // After successful edit, update the product list in state
+          setProducts((prevProducts) =>
+            prevProducts.map((product) =>
+              product._id === editingProduct._id ? data.product : product
+            )
+          );
+          setEditingProduct(null); // Reset the editing state
+        } else {
+          alert(data.message); // Show an error message if edit failed
+        }
+      } catch (error) {
+        console.error("Error editing product:", error);
+        alert("Failed to edit product");
+      }
     }
   };
+  
 
-  const handleRemoveProduct = (id) => {
-    setProducts(products.filter((product) => product.id !== id));
+  const handleRemoveProduct = async (id) => {
+    try {
+      const response = await fetch("/api/product-management", {
+        method: "DELETE", // Use DELETE method
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id }), // Send product ID in the request body
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // If the delete was successful, update the local state
+        setProducts((prevProducts) =>
+          prevProducts.filter((product) => product._id !== id)
+        );
+      } else {
+        // Handle the case where deletion was unsuccessful
+        alert(data.message || "Failed to delete product");
+      }
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      alert("An error occurred while deleting the product.");
+    }
   };
 
   const handleAddProductType = async () => {
@@ -474,6 +525,7 @@ export default function AdminDashboard() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Image</TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead>Price</TableHead>
                       <TableHead>Quantity</TableHead>
@@ -482,9 +534,22 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {products.length > 0 ? (
+                    {products && products.length > 0 ? (
                       products.map((product) => (
                         <TableRow key={product._id}>
+                          <TableCell>
+                            {product.image ? (
+                              <Image
+                                src={product.image}
+                                alt={product.name}
+                                className="object-cover rounded-md"
+                                width={48}
+                                height={48}
+                              />
+                            ) : (
+                              <span className="text-gray-500">No Image</span>
+                            )}
+                          </TableCell>
                           <TableCell className="font-medium">
                             {product.name}
                           </TableCell>
@@ -494,6 +559,7 @@ export default function AdminDashboard() {
                             {product.type?.name || "Unknown"}
                           </TableCell>
                           <TableCell className="text-right">
+                            {/* Edit Dialog Trigger */}
                             <Dialog>
                               <DialogTrigger asChild>
                                 <Button
@@ -503,13 +569,14 @@ export default function AdminDashboard() {
                                   onClick={() =>
                                     setEditingProduct({
                                       ...product,
-                                      type: product.type?._id,
+                                      type: product.type?._id, // Populate the type
                                     })
                                   }
                                 >
                                   Edit
                                 </Button>
                               </DialogTrigger>
+                              {/* Edit Dialog Content */}
                               <DialogContent className="sm:max-w-[425px] bg-white">
                                 <DialogHeader>
                                   <DialogTitle className="text-black">
@@ -553,7 +620,9 @@ export default function AdminDashboard() {
                                       onChange={(e) =>
                                         setEditingProduct((prev) => ({
                                           ...prev,
-                                          price: Number(e.target.value),
+                                          price: Number.parseFloat(
+                                            e.target.value
+                                          ),
                                         }))
                                       }
                                       className="col-span-3 text-black"
@@ -573,7 +642,9 @@ export default function AdminDashboard() {
                                       onChange={(e) =>
                                         setEditingProduct((prev) => ({
                                           ...prev,
-                                          quantity: Number(e.target.value),
+                                          quantity: Number.parseInt(
+                                            e.target.value
+                                          ),
                                         }))
                                       }
                                       className="col-span-3 text-black"
@@ -618,6 +689,7 @@ export default function AdminDashboard() {
                                 </DialogFooter>
                               </DialogContent>
                             </Dialog>
+                            {/* Remove Product Button */}
                             <Button
                               variant="destructive"
                               size="sm"
@@ -631,7 +703,7 @@ export default function AdminDashboard() {
                     ) : (
                       <TableRow>
                         <TableCell
-                          colSpan={5}
+                          colSpan={6}
                           className="text-center text-gray-500"
                         >
                           No products available.
@@ -685,12 +757,11 @@ export default function AdminDashboard() {
                                   variant="outline"
                                   size="sm"
                                   className="mr-2"
-                                  onClick={
-                                    () =>
-                                      setEditingProductType({
-                                        id: type._id,
-                                        newName: type.name,
-                                      }) // Store ID when clicking Edit
+                                  onClick={() =>
+                                    setEditingProductType({
+                                      id: type._id,
+                                      newName: type.name,
+                                    })
                                   }
                                 >
                                   Edit
