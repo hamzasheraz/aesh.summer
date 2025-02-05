@@ -34,7 +34,7 @@ export default function ProductDisplay() {
   const closeModal = () => setSelectedProduct(null);
 
   const getItemQuantity = (id) => {
-    const item = cart.find((item) => item.id === id);
+    const item = cart.find((item) => item._id === id);
     return item ? item.quantity : 0;
   };
 
@@ -96,17 +96,17 @@ export default function ProductDisplay() {
                 <p className="text-gray-600 mb-4">{selectedProduct.description}</p>
                 <p className="text-blue-600 font-bold text-xl mb-4">${selectedProduct.price.toFixed(2)}</p>
                 <div className="space-y-4">
-                  {getItemQuantity(selectedProduct.id) > 0 ? (
+                  {getItemQuantity(selectedProduct._id) > 0 ? (
                     <div className="flex items-center space-x-4">
                       <button
-                        onClick={() => decreaseQuantity(selectedProduct.id)}
+                        onClick={() => decreaseQuantity(selectedProduct._id)}
                         className="bg-gray-200 text-gray-700 py-2 px-4 rounded-full hover:bg-gray-300 transition"
                       >
                         <Minus size={16} />
                       </button>
-                      <span className="text-xl font-semibold">{getItemQuantity(selectedProduct.id)}</span>
+                      <span className="text-xl font-semibold">{getItemQuantity(selectedProduct._id)}</span>
                       <button
-                        onClick={() => increaseQuantity(selectedProduct.id)}
+                        onClick={() => increaseQuantity(selectedProduct._id)}
                         className="bg-gray-200 text-gray-700 py-2 px-4 rounded-full hover:bg-gray-300 transition"
                       >
                         <Plus size={16} />
@@ -120,9 +120,9 @@ export default function ProductDisplay() {
                       Add to Cart
                     </button>
                   )}
-                  {getItemQuantity(selectedProduct.id) > 0 && (
+                  {getItemQuantity(selectedProduct._id) > 0 && (
                     <button
-                      onClick={() => removeFromCart(selectedProduct.id)}
+                      onClick={() => removeFromCart(selectedProduct._id)}
                       className="w-full bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700 transition"
                     >
                       Remove from Cart

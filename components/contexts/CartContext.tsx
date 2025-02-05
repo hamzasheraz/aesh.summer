@@ -26,16 +26,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addToCart = (item: CartItem) => {
     setCart((prevCart) => {
-      const existingItem = prevCart.find((i) => i.id === item.id)
+      const existingItem = prevCart.find((i) => i.id === item._id)
       if (existingItem) {
-        return prevCart.map((i) => (i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i))
+        return prevCart.map((i) => (i.id === item._id ? { ...i, quantity: i.quantity + 1 } : i))
       }
       return [...prevCart, { ...item, quantity: 1 }]
     })
   }
 
   const removeFromCart = (id: number) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== id))
+    setCart((prevCart) => prevCart.filter((item) => item._id !== id))
   }
 
   const clearCart = () => {
@@ -43,13 +43,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }
 
   const increaseQuantity = (id: number) => {
-    setCart((prevCart) => prevCart.map((item) => (item.id === id ? { ...item, quantity: item.quantity + 1 } : item)))
+    setCart((prevCart) => prevCart.map((item) => (item._id === id ? { ...item, quantity: item.quantity + 1 } : item)))
   }
 
   const decreaseQuantity = (id: number) => {
     setCart((prevCart) =>
       prevCart
-        .map((item) => (item.id === id && item.quantity > 1 ? { ...item, quantity: item.quantity - 1 } : item))
+        .map((item) => (item._id === id && item.quantity > 1 ? { ...item, quantity: item.quantity - 1 } : item))
         .filter((item) => item.quantity > 0),
     )
   }

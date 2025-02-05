@@ -37,17 +37,17 @@ export default function CartIcon() {
             ) : (
               <>
                 {cart.map((item) => (
-                  <div key={item.id} className="flex justify-between items-center px-4 py-2">
+                  <div key={item._id} className="flex justify-between items-center px-4 py-2">
                     <span className="font-semibold text-black">{item.name}</span>
                     <div className="flex items-center space-x-2">
-                      <button onClick={() => decreaseQuantity(item.id)} className="text-gray-500 hover:text-gray-700">
+                      <button onClick={() => decreaseQuantity(item._id)} className="text-gray-500 hover:text-gray-700">
                         <Minus size={16} />
                       </button>
                       <span className="text-black">{item.quantity}</span>
-                      <button onClick={() => increaseQuantity(item.id)} className="text-gray-500 hover:text-gray-700">
+                      <button onClick={() => increaseQuantity(item._id)} className="text-gray-500 hover:text-gray-700">
                         <Plus size={16} />
                       </button>
-                      <button onClick={() => removeFromCart(item.id)} className="text-red-500 hover:text-red-700 ml-2">
+                      <button onClick={() => removeFromCart(item._id)} className="text-red-500 hover:text-red-700 ml-2">
                         &times;
                       </button>
                     </div>
