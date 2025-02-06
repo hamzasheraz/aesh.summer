@@ -1,16 +1,7 @@
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion } from "framer-motion"
 
 export default function ThankYou() {
-  const router = useRouter()
-
-  useEffect(() => {
-    // Clear the cart here if needed
-    // This assumes you have a clearCart function in your CartContext
-    // If you don't, you'll need to implement it
-  }, [])
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">

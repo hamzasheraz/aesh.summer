@@ -40,10 +40,10 @@ export default function About() {
           <p className="text-gray-700 mb-4">
             We set out to create a brand that embodies the spirit of summer - fun, relaxed, and effortlessly cool. Each
             product in our collection is carefully designed and selected to enhance your summer adventures, whether
-            you're lounging by the pool, hitting the beach, or exploring a new sunny destination.
+            you&apos;re lounging by the pool, hitting the beach, or exploring a new sunny destination.
           </p>
           <p className="text-gray-700">
-            At Aesh.Summer, we believe that the right gear can transform your summer experience. We're committed to
+            At Aesh.Summer, we believe that the right gear can transform your summer experience. We&apos;re committed to
             providing you with products that not only look great but also stand up to the rigors of sun, sand, and surf.
             Join us in celebrating the season of endless sunshine and unforgettable memories.
           </p>
@@ -52,4 +52,3 @@ export default function About() {
     </div>
   )
 }
-

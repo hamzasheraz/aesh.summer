@@ -3,6 +3,12 @@ import { Menu, X, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
+interface Category {
+  id: string;    // Assuming each category has an id (change type if needed)
+  name: string;  // The name of the category
+  // Add other properties if there are any, e.g., description, image, etc.
+}
+
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const [isProductsOpen, setIsProductsOpen] = useState(false);
@@ -14,7 +20,7 @@ export default function Navigation() {
       try {
         const res = await fetch("/api/product-type");
         const { data } = await res.json();
-        const categories = data.map((category) => category.name);
+        const categories = data.map((category:Category) => category.name);
         setProductCategories(categories);
         setLoading(false);
       } catch (error) {

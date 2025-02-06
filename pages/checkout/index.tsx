@@ -49,9 +49,12 @@ export default function Checkout() {
         clearCart();
         router.push("/thank-you");
       }
-    } catch (error: any) {
-      console.error("Order failed:", error);
+    } catch (error: unknown) {
+      if(error instanceof Error) {
       alert(error.message || "Error placing order. Please try again.");
+      } else {
+        alert("An unknown error occurred. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -68,7 +71,7 @@ export default function Checkout() {
           {cart.length > 0 ? (
             cart.map((item) => (
               <div
-                key={item.id}
+                key={item._id}
                 className="flex justify-between items-center mb-4"
               >
                 <span>

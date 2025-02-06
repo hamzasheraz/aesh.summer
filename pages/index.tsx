@@ -15,7 +15,7 @@ export default function Home() {
           transition={{ duration: 0.5 }}
           className="text-center mb-16"
         >
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-blue-600 mb-4"   style={{ fontFamily: "Anaktoria" }}>
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-blue-600 mb-4" style={{ fontFamily: "Anaktoria" }}>
             Aesh.Summer
           </h1>
           <p className="text-xl text-gray-700 mb-8 max-w-2xl mx-auto">
@@ -47,7 +47,7 @@ export default function Home() {
           <div className="absolute top-20 right-10">
             <h2
               className={`text-5xl md:text-8xl font-extrabold text-white tracking-wide italic drop-shadow-lg`}
-             style={{ fontFamily: "Anaktoria" }}
+              style={{ fontFamily: "Anaktoria" }}
             >
               AESH
             </h2>

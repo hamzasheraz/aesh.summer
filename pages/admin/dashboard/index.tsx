@@ -1,5 +1,5 @@
 "use client";
-
+import { ChangeEvent } from "react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/contexts/AuthContext";
@@ -46,7 +46,7 @@ interface Product {
   _id: string;
   name: string;
   price: number;
-  image: string;
+  image: File | null; // image can be a File or null
   type: {
     _id: string;
     name: string;
@@ -93,8 +93,8 @@ export default function AdminDashboard() {
   const [newProductType, setNewProductType] = useState("");
   const [editingProductType, setEditingProductType] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [selectedOrder, setSelectedOrder] = useState(null)
+  const [error, setError] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     const getOrders = async () => {
@@ -105,8 +105,14 @@ export default function AdminDashboard() {
         }
         const data = await response.json();
         setOrders(data.orders);
-      } catch (err) {
-        setError("Error loading orders");
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          // Accessing the message property safely if it's an instance of Error
+          setError(`Error: ${err.message}`);
+        } else {
+          // Fallback for any other type of error
+          setError("An unknown error occurred");
+        }
       }
     };
     const getProducts = async () => {
@@ -117,8 +123,14 @@ export default function AdminDashboard() {
         }
         const data = await response.json();
         setProducts(data.products); // ✅ Set the fetched data
-      } catch (err) {
-        setError("Error loading products");
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          // Accessing the message property safely if it's an instance of Error
+          setError(`Error: ${err.message}`);
+        } else {
+          // Fallback for any other type of error
+          setError("An unknown error occurred");
+        }
       }
     };
     const fetchProductTypes = async () => {
@@ -129,8 +141,14 @@ export default function AdminDashboard() {
         }
         const data = await response.json();
         setProductTypes(data.data); // ✅ Set the fetched data
-      } catch (err) {
-        setError("Error loading product types");
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          // Accessing the message property safely if it's an instance of Error
+          setError(`Error: ${err.message}`);
+        } else {
+          // Fallback for any other type of error
+          setError("An unknown error occurred");
+        }
       }
     };
     const fetchContactSubmissions = async () => {
@@ -141,8 +159,14 @@ export default function AdminDashboard() {
         }
         const data = await response.json();
         setContactSubmissions(data.data); // ✅ Set the fetched data
-      } catch (err) {
-        setError("Error loading contact submissions");
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          // Accessing the message property safely if it's an instance of Error
+          setError(`Error: ${err.message}`);
+        } else {
+          // Fallback for any other type of error
+          setError("An unknown error occurred");
+        }
       } finally {
       }
     };
@@ -152,8 +176,14 @@ export default function AdminDashboard() {
         if (!isLoggedIn) {
           router.push("/admin/login");
         }
-      } catch (err) {
-        setError("An error occurred while checking authentication.");
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          // Accessing the message property safely if it's an instance of Error
+          setError(`Error: ${err.message}`);
+        } else {
+          // Fallback for any other type of error
+          setError("An unknown error occurred");
+        }
       } finally {
         getOrders();
         fetchContactSubmissions();
@@ -209,10 +239,14 @@ export default function AdminDashboard() {
           type: "",
           image: null,
         });
-      } catch (err) {
-        // Set error state for display
-        setError("An error occurred while adding the product.");
-        console.error("Error adding product:", err);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          // Accessing the message property safely if it's an instance of Error
+          setError(`Error: ${err.message}`);
+        } else {
+          // Fallback for any other type of error
+          setError("An unknown error occurred");
+        }
       }
     } else {
       setError("Please fill out all fields.");
@@ -250,7 +284,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleRemoveProduct = async (id) => {
+  const handleRemoveProduct = async (id: string) => {
     try {
       const response = await fetch("/api/product-management", {
         method: "DELETE", // Use DELETE method
@@ -329,7 +363,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleRemoveProductType = async (id) => {
+  const handleRemoveProductType = async (id: string) => {
     try {
       const response = await fetch("/api/product-type", {
         method: "DELETE",
@@ -357,9 +391,9 @@ export default function AdminDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, newStatus }),
       });
-  
+
       const data = await response.json();
-  
+
       if (data.success) {
         setOrders((prevOrders) =>
           prevOrders.map((order) =>
@@ -373,20 +407,9 @@ export default function AdminDashboard() {
       console.error("Failed to update order status:", error);
     }
   };
-  
 
-  const handleCancelOrder = (id) => {
-    if (window.confirm("Are you sure you want to cancel this order?")) {
-      setOrders(
-        orders.map((order) =>
-          order.id === id ? { ...order, status: "Cancelled" } : order
-        )
-      );
-    }
-  };
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
+  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
       setNewProduct({ ...newProduct, image: file });
     }
@@ -445,11 +468,9 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {orders.map((order,idx) => (
+                    {orders.map((order, idx) => (
                       <TableRow key={order._id}>
-                        <TableCell className="font-medium">
-                        {idx+1}
-                        </TableCell>
+                        <TableCell className="font-medium">{idx + 1}</TableCell>
                         <TableCell>{order.fullName}</TableCell>
                         <TableCell>{order.email}</TableCell>
                         <TableCell>{order.shippingAddress}</TableCell>
@@ -936,42 +957,70 @@ export default function AdminDashboard() {
         </TabsContent>
       </Tabs>
       {selectedOrder && (
-        <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
+        <Dialog
+          open={!!selectedOrder}
+          onOpenChange={() => setSelectedOrder(null)}
+        >
           <DialogContent className="sm:max-w-[425px] bg-white">
             <DialogHeader>
               <DialogTitle className="text-black">Order Details</DialogTitle>
-              <DialogDescription className="text-black">Order ID: {selectedOrder._id}</DialogDescription>
+              <DialogDescription className="text-black">
+                Order ID: {selectedOrder._id}
+              </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="customer" className="text-right text-black">
                   Customer
                 </Label>
-                <Input id="customer" value={selectedOrder.fullName} className="col-span-3 text-black" readOnly />
+                <Input
+                  id="customer"
+                  value={selectedOrder.fullName}
+                  className="col-span-3 text-black"
+                  readOnly
+                />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="email" className="text-right text-black">
                   Email
                 </Label>
-                <Input id="email" value={selectedOrder.email} className="col-span-3 text-black" readOnly />
+                <Input
+                  id="email"
+                  value={selectedOrder.email}
+                  className="col-span-3 text-black"
+                  readOnly
+                />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="address" className="text-right text-black">
                   Address
                 </Label>
-                <Input id="address" value={selectedOrder.shippingAddress} className="col-span-3 text-black" readOnly />
+                <Input
+                  id="address"
+                  value={selectedOrder.shippingAddress}
+                  className="col-span-3 text-black"
+                  readOnly
+                />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="status" className="text-right text-black">
                   Status
                 </Label>
-                <Input id="status" value={selectedOrder.status} className="col-span-3 text-black" readOnly />
+                <Input
+                  id="status"
+                  value={selectedOrder.status}
+                  className="col-span-3 text-black"
+                  readOnly
+                />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right text-black">Items</Label>
                 <div className="col-span-3">
                   {selectedOrder.cartItems.map((item, index) => (
-                    <div key={index} className="flex justify-between text-black">
+                    <div
+                      key={index}
+                      className="flex justify-between text-black"
+                    >
                       <span>
                         {item.name} x {item.quantity}
                       </span>
@@ -984,7 +1033,12 @@ export default function AdminDashboard() {
                 <Label htmlFor="total" className="text-right text-black">
                   Total
                 </Label>
-                <Input id="total" value={`$${selectedOrder.totalAmount.toFixed(2)}`} className="col-span-3 text-black" readOnly />
+                <Input
+                  id="total"
+                  value={`$${selectedOrder.totalAmount.toFixed(2)}`}
+                  className="col-span-3 text-black"
+                  readOnly
+                />
               </div>
             </div>
             <DialogFooter>

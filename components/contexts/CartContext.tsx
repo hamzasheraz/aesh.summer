@@ -3,8 +3,9 @@
 import type React from "react"
 import { createContext, useState, useContext } from "react"
 
+// Updated CartItem type with _id as string
 interface CartItem {
-  id: number
+  _id: string // _id should be a string
   name: string
   price: number
   quantity: number
@@ -13,10 +14,10 @@ interface CartItem {
 interface CartContextType {
   cart: CartItem[]
   addToCart: (item: CartItem) => void
-  removeFromCart: (id: number) => void
+  removeFromCart: (id: string) => void
   clearCart: () => void
-  increaseQuantity: (id: number) => void
-  decreaseQuantity: (id: number) => void
+  increaseQuantity: (id: string) => void
+  decreaseQuantity: (id: string) => void
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -26,15 +27,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addToCart = (item: CartItem) => {
     setCart((prevCart) => {
-      const existingItem = prevCart.find((i) => i.id === item._id)
+      const existingItem = prevCart.find((i) => i._id === item._id)
       if (existingItem) {
-        return prevCart.map((i) => (i.id === item._id ? { ...i, quantity: i.quantity + 1 } : i))
+        return prevCart.map((i) => (i._id === item._id ? { ...i, quantity: i.quantity + 1 } : i))
       }
       return [...prevCart, { ...item, quantity: 1 }]
     })
   }
 
-  const removeFromCart = (id: number) => {
+  const removeFromCart = (id: string) => { // id is a string
     setCart((prevCart) => prevCart.filter((item) => item._id !== id))
   }
 
@@ -42,11 +43,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setCart([])
   }
 
-  const increaseQuantity = (id: number) => {
+  const increaseQuantity = (id: string) => { // id is a string
     setCart((prevCart) => prevCart.map((item) => (item._id === id ? { ...item, quantity: item.quantity + 1 } : item)))
   }
 
-  const decreaseQuantity = (id: number) => {
+  const decreaseQuantity = (id: string) => { // id is a string
     setCart((prevCart) =>
       prevCart
         .map((item) => (item._id === id && item.quantity > 1 ? { ...item, quantity: item.quantity - 1 } : item))
@@ -77,4 +78,3 @@ export function useCart() {
   }
   return context
 }
-

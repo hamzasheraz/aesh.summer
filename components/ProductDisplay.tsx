@@ -6,10 +6,14 @@ import { useCart } from "@/components/contexts/CartContext";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Plus, Minus } from "lucide-react";
-import { useParams } from "next/navigation"; // Import useParams
 
+type ProductDisplayProps = {
+  category: string
+}
+
+// Updated Product Type
 type Product = {
-  id: string;
+  _id: string; // Updated to match MongoDB documents
   name: string;
   price: number;
   image: string;
@@ -17,25 +21,21 @@ type Product = {
   category: string;
 };
 
-export default function ProductDisplay() {
+export default function ProductDisplay({ category }: ProductDisplayProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [error, setError] = useState<string | null>(null); // Handle errors
   const { addToCart, removeFromCart, cart, increaseQuantity, decreaseQuantity } = useCart();
-  const params = useParams(); // Get the current route params
-  const category = params?.category as string | undefined; // Get the category from params
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        // Determine the API URL based on the presence of a category
-        console.log(category);
+        console.log("Fetching products for category:", category);
         const response = category
           ? await fetch(`/api/products?category=${category}`) // Fetch category-specific products
           : await fetch("/api/last-products"); // Fetch last products for home page
-        
+
         if (!response.ok) {
-          // Handle non-OK responses (404, 500, etc.)
           throw new Error(`Failed to fetch products: ${response.statusText}`);
         }
 
@@ -46,9 +46,13 @@ export default function ProductDisplay() {
         } else {
           setError(data.message); // If API returns failure, display the message
         }
-      } catch (error: any) {
-        setError(error.message); // Handle fetch errors gracefully
-        console.error("Error fetching products:", error);
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          setError(error.message); // Handle fetch errors safely
+          console.error("Error fetching products:", error.message);
+        } else {
+          setError("An unknown error occurred.");
+        }
       }
     };
 
