@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 import { Plus, Minus } from "lucide-react";
 
 type ProductDisplayProps = {
-  category: string
+  category?: string
 }
 
 // Updated Product Type
