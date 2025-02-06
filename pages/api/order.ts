@@ -67,18 +67,20 @@ export default async function handler(
         order: newOrder,
       });
     } catch (error) {
+      console.error(error);  // Log the error to the console
       res
         .status(500)
-        .json({ success: false, message: "Error placing order", error });
+        .json({ success: false, message: "Error placing order" });
     }
   } else if (req.method === "GET") {
     try {
       const orders = await Order.find();
       res.status(200).json({ success: true, orders });
     } catch (error) {
+      console.error(error);  // Log the error to the console
       res
         .status(500)
-        .json({ success: false, message: "Error fetching orders", error });
+        .json({ success: false, message: "Error fetching orders" });
     }
   } else if (req.method === "PUT") {
     try {
@@ -101,12 +103,12 @@ export default async function handler(
         order: updatedOrder,
       });
     } catch (error) {
+      console.error(error);  // Log the error to the console
       res
         .status(500)
         .json({
           success: false,
           message: "Error updating order status",
-          error,
         });
     }
   } else {
