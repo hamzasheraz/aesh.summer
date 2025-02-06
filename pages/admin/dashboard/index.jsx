@@ -1,5 +1,4 @@
 "use client";
-import { ChangeEvent } from "react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/contexts/AuthContext";
@@ -60,8 +59,8 @@ export default function AdminDashboard() {
   const [newProductType, setNewProductType] = useState("");
   const [editingProductType, setEditingProductType] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [error, setError] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   useEffect(() => {
     const getOrders = async () => {
