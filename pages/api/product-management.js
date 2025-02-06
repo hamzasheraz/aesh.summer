@@ -1,28 +1,10 @@
-import type { NextApiRequest, NextApiResponse } from "next";
 import { connectDB } from "@/lib/mongodb";
 import Product from "@/lib/models/Product";
 import ProductType from "@/lib/models/ProductType";
 import multer from "multer";
 import path from "path";
-import { IncomingMessage } from "http";
 import { promisify } from "util";
 import fs from "fs";
-
-// Define the shape of the incoming request data for the product
-interface ProductRequestBody {
-  id?: string;
-  name?: string;
-  price?: number;
-  quantity?: number;
-  type?: string;
-  image?: string;
-}
-
-// Define the product type
-interface ProductRequest extends IncomingMessage {
-  file?: Express.Multer.File;
-  body: ProductRequestBody;
-}
 
 export const config = {
   api: {
@@ -30,7 +12,7 @@ export const config = {
   },
 };
 
-// 🔹 Configure Multer for file storage
+// Configure Multer for file storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "public/uploads");
@@ -44,10 +26,7 @@ const upload = multer({ storage }).single("image");
 const uploadMiddleware = promisify(upload);
 
 // API route handler
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req, res) {
   await connectDB();
 
   switch (req.method) {
@@ -67,8 +46,8 @@ export default async function handler(
   }
 }
 
-// ✅ ADD PRODUCT
-const addProduct = async (req: ProductRequest, res: NextApiResponse) => {
+// ADD PRODUCT
+const addProduct = async (req, res) => {
   try {
     // Handle file upload
     await uploadMiddleware(req, res);
@@ -111,12 +90,12 @@ const addProduct = async (req: ProductRequest, res: NextApiResponse) => {
   }
 };
 
-// ✅ EDIT PRODUCT
-const editProduct = async (req: NextApiRequest, res: NextApiResponse) => {
+// EDIT PRODUCT
+const editProduct = async (req, res) => {
   if (req.method === "PUT") {
     try {
       // Parse the request body manually
-      const data: ProductRequestBody = await new Promise((resolve, reject) => {
+      const data = await new Promise((resolve, reject) => {
         let body = "";
         req.on("data", (chunk) => {
           body += chunk;
@@ -125,7 +104,7 @@ const editProduct = async (req: NextApiRequest, res: NextApiResponse) => {
           try {
             resolve(JSON.parse(body)); // Parse the incoming JSON
           } catch (error) {
-            reject("Failed to parse body");
+            reject("Failed to parse body",error);
           }
         });
       });
@@ -198,11 +177,11 @@ const editProduct = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-// ✅ DELETE PRODUCT
-const deleteProduct = async (req: NextApiRequest, res: NextApiResponse) => {
+// DELETE PRODUCT
+const deleteProduct = async (req, res) => {
   if (req.method === "DELETE") {
     try {
-      const data: ProductRequestBody = await new Promise((resolve, reject) => {
+      const data = await new Promise((resolve, reject) => {
         let body = "";
         req.on("data", (chunk) => {
           body += chunk;
@@ -211,7 +190,7 @@ const deleteProduct = async (req: NextApiRequest, res: NextApiResponse) => {
           try {
             resolve(JSON.parse(body)); // Parse the incoming JSON
           } catch (error) {
-            reject("Failed to parse body");
+            reject("Failed to parse body",error);
           }
         });
       });
@@ -262,8 +241,8 @@ const deleteProduct = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-// ✅ GET ALL PRODUCTS
-const getProducts = async (req: NextApiRequest, res: NextApiResponse) => {
+// GET ALL PRODUCTS
+const getProducts = async (req, res) => {
   try {
     const products = await Product.find().populate("type", "name");
     return res.status(200).json({ success: true, products });

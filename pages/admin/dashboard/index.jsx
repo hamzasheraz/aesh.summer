@@ -42,44 +42,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
 
-interface Product {
-  _id: string;
-  name: string;
-  price: number;
-  image: File | null; // image can be a File or null
-  type: {
-    _id: string;
-    name: string;
-  };
-}
-
-interface CartItem {
-  productId: string;
-  name: string;
-  quantity: number;
-  price: number;
-  _id: string;
-}
-
-interface Order {
-  _id: string;
-  fullName: string;
-  email: string;
-  phoneNumber: string;
-  shippingAddress: string;
-  cartItems: CartItem[];
-  totalAmount: number;
-  status: string;
-  createdAt: string; // ISO date string
-  updatedAt: string; // ISO date string
-  __v: number;
-}
-
 export default function AdminDashboard() {
   const { isLoggedIn, logout } = useAuth();
   const router = useRouter();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [orders, setOrders] = useState([]);
+  const [products, setProducts] = useState([]);
   const [productTypes, setProductTypes] = useState([]);
   const [contactSubmissions, setContactSubmissions] = useState(null);
   const [newProduct, setNewProduct] = useState({
@@ -105,7 +72,7 @@ export default function AdminDashboard() {
         }
         const data = await response.json();
         setOrders(data.orders);
-      } catch (err: unknown) {
+      } catch (err) {
         if (err instanceof Error) {
           // Accessing the message property safely if it's an instance of Error
           setError(`Error: ${err.message}`);
@@ -123,7 +90,7 @@ export default function AdminDashboard() {
         }
         const data = await response.json();
         setProducts(data.products); // ✅ Set the fetched data
-      } catch (err: unknown) {
+      } catch (err) {
         if (err instanceof Error) {
           // Accessing the message property safely if it's an instance of Error
           setError(`Error: ${err.message}`);
@@ -141,7 +108,7 @@ export default function AdminDashboard() {
         }
         const data = await response.json();
         setProductTypes(data.data); // ✅ Set the fetched data
-      } catch (err: unknown) {
+      } catch (err) {
         if (err instanceof Error) {
           // Accessing the message property safely if it's an instance of Error
           setError(`Error: ${err.message}`);
@@ -159,7 +126,7 @@ export default function AdminDashboard() {
         }
         const data = await response.json();
         setContactSubmissions(data.data); // ✅ Set the fetched data
-      } catch (err: unknown) {
+      } catch (err) {
         if (err instanceof Error) {
           // Accessing the message property safely if it's an instance of Error
           setError(`Error: ${err.message}`);
@@ -176,7 +143,7 @@ export default function AdminDashboard() {
         if (!isLoggedIn) {
           router.push("/admin/login");
         }
-      } catch (err: unknown) {
+      } catch (err) {
         if (err instanceof Error) {
           // Accessing the message property safely if it's an instance of Error
           setError(`Error: ${err.message}`);
@@ -239,7 +206,7 @@ export default function AdminDashboard() {
           type: "",
           image: null,
         });
-      } catch (err: unknown) {
+      } catch (err) {
         if (err instanceof Error) {
           // Accessing the message property safely if it's an instance of Error
           setError(`Error: ${err.message}`);
@@ -284,7 +251,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleRemoveProduct = async (id: string) => {
+  const handleRemoveProduct = async (id) => {
     try {
       const response = await fetch("/api/product-management", {
         method: "DELETE", // Use DELETE method
@@ -363,7 +330,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleRemoveProductType = async (id: string) => {
+  const handleRemoveProductType = async (id) => {
     try {
       const response = await fetch("/api/product-type", {
         method: "DELETE",
@@ -384,7 +351,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleChangeOrderStatus = async (id: string, newStatus: string) => {
+  const handleChangeOrderStatus = async (id, newStatus) => {
     try {
       const response = await fetch("/api/order", {
         method: "PUT",
@@ -408,7 +375,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
       setNewProduct({ ...newProduct, image: file });

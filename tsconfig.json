@@ -33,7 +33,7 @@
     "**/*.tsx",
     "next-env.d.ts",
     ".next/types/**/*.ts"
-, "lib/models/Admin.js", "lib/mongodb.js"  ],
+, "lib/models/Admin.js", "lib/mongodb.js", "pages/admin/dashboard/index.jsx", "pages/api/order.js", "pages/api/product-management.js"  ],
   "exclude": [
     "node_modules"
   ]

@@ -1,12 +1,8 @@
 import Order from "@/lib/models/Order";
 import Product from "@/lib/models/Product";
 import { connectDB } from "@/lib/mongodb";
-import type { NextApiRequest, NextApiResponse } from "next";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req, res) {
   await connectDB();
 
   if (req.method === "POST") {
@@ -21,7 +17,7 @@ export default async function handler(
       } = req.body;
 
       // Transform cartItems: change each item's _id to productId
-      const formattedCartItems = cartItems.map((item: any) => ({
+      const formattedCartItems = cartItems.map((item) => ({
         productId: item._id,
         name: item.name,
         quantity: item.quantity,
@@ -53,7 +49,7 @@ export default async function handler(
 
       // Decrement the quantity of each product in the order
       await Promise.all(
-        formattedCartItems.map(async (item: any) => {
+        formattedCartItems.map(async (item) => {
           await Product.updateOne(
             { _id: item.productId },
             { $inc: { quantity: -item.quantity } }
