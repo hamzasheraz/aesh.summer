@@ -17,7 +17,7 @@ export default function WhatsAppPopup() {
   }, []);
 
   const handleClick = () => {
-    window.open("https://wa.me/923457733767", "_blank");
+    window.open("https://wa.me/923260968237", "_blank");
   };
 
   if (!isVisible) return null;

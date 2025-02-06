@@ -42,39 +42,44 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
 
-// Updated mock data for orders
-const mockOrders = [
-  {
-    id: 1,
-    customer: "John Doe",
-    email: "john@example.com",
-    address: "123 Main St, City, Country",
-    total: 99.99,
-    status: "Completed",
-  },
-  {
-    id: 2,
-    customer: "Jane Smith",
-    email: "jane@example.com",
-    address: "456 Elm St, Town, Country",
-    total: 149.99,
-    status: "Processing",
-  },
-  {
-    id: 3,
-    customer: "Bob Johnson",
-    email: "bob@example.com",
-    address: "789 Oak St, Village, Country",
-    total: 79.99,
-    status: "Shipped",
-  },
-];
+interface Product {
+  _id: string;
+  name: string;
+  price: number;
+  image: string;
+  type: {
+    _id: string;
+    name: string;
+  };
+}
+
+interface CartItem {
+  productId: string;
+  name: string;
+  quantity: number;
+  price: number;
+  _id: string;
+}
+
+interface Order {
+  _id: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  shippingAddress: string;
+  cartItems: CartItem[];
+  totalAmount: number;
+  status: string;
+  createdAt: string; // ISO date string
+  updatedAt: string; // ISO date string
+  __v: number;
+}
 
 export default function AdminDashboard() {
   const { isLoggedIn, logout } = useAuth();
   const router = useRouter();
-  const [orders, setOrders] = useState(mockOrders);
-  const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [productTypes, setProductTypes] = useState([]);
   const [contactSubmissions, setContactSubmissions] = useState(null);
   const [newProduct, setNewProduct] = useState({
@@ -89,8 +94,21 @@ export default function AdminDashboard() {
   const [editingProductType, setEditingProductType] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null)
 
   useEffect(() => {
+    const getOrders = async () => {
+      try {
+        const response = await fetch("/api/order");
+        if (!response.ok) {
+          throw new Error("Failed to fetch orders");
+        }
+        const data = await response.json();
+        setOrders(data.orders);
+      } catch (err) {
+        setError("Error loading orders");
+      }
+    };
     const getProducts = async () => {
       try {
         const response = await fetch("/api/product-management");
@@ -137,6 +155,7 @@ export default function AdminDashboard() {
       } catch (err) {
         setError("An error occurred while checking authentication.");
       } finally {
+        getOrders();
         fetchContactSubmissions();
         fetchProductTypes();
         getProducts();
@@ -331,20 +350,39 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleChangeOrderStatus = (id, newStatus) => {
-    setOrders(
-      orders.map((order) =>
-        order.id === id ? { ...order, status: newStatus } : order
-      )
-    );
+  const handleChangeOrderStatus = async (id: string, newStatus: string) => {
+    try {
+      const response = await fetch("/api/order", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, newStatus }),
+      });
+  
+      const data = await response.json();
+  
+      if (data.success) {
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order._id === id ? { ...order, status: newStatus } : order
+          )
+        );
+      } else {
+        console.error("Error updating order status:", data.message);
+      }
+    } catch (error) {
+      console.error("Failed to update order status:", error);
+    }
   };
+  
 
   const handleCancelOrder = (id) => {
-    setOrders(
-      orders.map((order) =>
-        order.id === id ? { ...order, status: "Cancelled" } : order
-      )
-    );
+    if (window.confirm("Are you sure you want to cancel this order?")) {
+      setOrders(
+        orders.map((order) =>
+          order.id === id ? { ...order, status: "Cancelled" } : order
+        )
+      );
+    }
   };
 
   const handleImageChange = (e) => {
@@ -401,53 +439,63 @@ export default function AdminDashboard() {
                       <TableHead>Customer</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Address</TableHead>
-                      <TableHead>Total</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {orders.map((order) => (
-                      <TableRow key={order.id}>
+                    {orders.map((order,idx) => (
+                      <TableRow key={order._id}>
                         <TableCell className="font-medium">
-                          {order.id}
+                        {idx+1}
                         </TableCell>
-                        <TableCell>{order.customer}</TableCell>
+                        <TableCell>{order.fullName}</TableCell>
                         <TableCell>{order.email}</TableCell>
-                        <TableCell>{order.address}</TableCell>
-                        <TableCell>${order.total.toFixed(2)}</TableCell>
+                        <TableCell>{order.shippingAddress}</TableCell>
+                        <TableCell className="text-right">
+                          ${order.totalAmount.toFixed(2)}
+                        </TableCell>
                         <TableCell>{order.status}</TableCell>
                         <TableCell className="text-right">
-                          <Select
-                            onValueChange={(value) =>
-                              handleChangeOrderStatus(order.id, value)
-                            }
-                            defaultValue={order.status}
-                          >
-                            <SelectTrigger className="w-[180px]">
-                              <SelectValue placeholder="Change status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Processing">
-                                Processing
-                              </SelectItem>
-                              <SelectItem value="Shipped">Shipped</SelectItem>
-                              <SelectItem value="Completed">
-                                Completed
-                              </SelectItem>
-                              <SelectItem value="Cancelled">
-                                Cancelled
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleCancelOrder(order.id)}
-                            className="ml-2"
-                          >
-                            Cancel
-                          </Button>
+                          <div className="flex justify-end items-center space-x-2">
+                            <Select
+                              onValueChange={(value) =>
+                                handleChangeOrderStatus(order._id, value)
+                              }
+                              defaultValue={order.status}
+                            >
+                              <SelectTrigger className="w-[130px]">
+                                <SelectValue placeholder="Change status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Processing">
+                                  Processing
+                                </SelectItem>
+                                <SelectItem value="Shipped">Shipped</SelectItem>
+                                <SelectItem value="Completed">
+                                  Completed
+                                </SelectItem>
+                                <SelectItem value="Cancelled">
+                                  Cancelled
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedOrder(order)}
+                            >
+                              View
+                            </Button>
+                            {/* <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleCancelOrder(order._id)}
+                            >
+                              Cancel
+                            </Button> */}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -544,16 +592,21 @@ export default function AdminDashboard() {
                         <TableRow key={product._id}>
                           <TableCell>
                             {product.image ? (
-                             <div style={{ position: 'relative', width: 48, height: 48 }}>
-                             <Image
-                               src={product.image}
-                               alt={product.name}
-                               fill // Use fill instead of width and height
-                               objectFit="cover" // Ensures the image covers the container with aspect ratio preserved
-                               className="rounded-md"
-                             />
-                           </div>
-                           
+                              <div
+                                style={{
+                                  position: "relative",
+                                  width: 48,
+                                  height: 48,
+                                }}
+                              >
+                                <Image
+                                  src={product.image}
+                                  alt={product.name}
+                                  fill // Use fill instead of width and height
+                                  objectFit="cover" // Ensures the image covers the container with aspect ratio preserved
+                                  className="rounded-md"
+                                />
+                              </div>
                             ) : (
                               <span className="text-gray-500">No Image</span>
                             )}
@@ -882,6 +935,64 @@ export default function AdminDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+      {selectedOrder && (
+        <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
+          <DialogContent className="sm:max-w-[425px] bg-white">
+            <DialogHeader>
+              <DialogTitle className="text-black">Order Details</DialogTitle>
+              <DialogDescription className="text-black">Order ID: {selectedOrder._id}</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="customer" className="text-right text-black">
+                  Customer
+                </Label>
+                <Input id="customer" value={selectedOrder.fullName} className="col-span-3 text-black" readOnly />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="email" className="text-right text-black">
+                  Email
+                </Label>
+                <Input id="email" value={selectedOrder.email} className="col-span-3 text-black" readOnly />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="address" className="text-right text-black">
+                  Address
+                </Label>
+                <Input id="address" value={selectedOrder.shippingAddress} className="col-span-3 text-black" readOnly />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="status" className="text-right text-black">
+                  Status
+                </Label>
+                <Input id="status" value={selectedOrder.status} className="col-span-3 text-black" readOnly />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right text-black">Items</Label>
+                <div className="col-span-3">
+                  {selectedOrder.cartItems.map((item, index) => (
+                    <div key={index} className="flex justify-between text-black">
+                      <span>
+                        {item.name} x {item.quantity}
+                      </span>
+                      {/* <span>${item.totalPrice.toFixed(2)}</span> */}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="total" className="text-right text-black">
+                  Total
+                </Label>
+                <Input id="total" value={`$${selectedOrder.totalAmount.toFixed(2)}`} className="col-span-3 text-black" readOnly />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setSelectedOrder(null)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

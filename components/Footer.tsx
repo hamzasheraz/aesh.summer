@@ -1,4 +1,4 @@
-import { Instagram, Linkedin } from "lucide-react";
+import { Instagram} from "lucide-react";
 import Link from "next/link";
 
 export default function Footer() {
@@ -32,11 +32,6 @@ export default function Footer() {
                 <a href="#" className="hover:text-blue-300 transition">
                   Terms of Service
                 </a>
-              </li>
-              <li>
-                <Link href="/admin/login" className="hover:text-blue-300 transition">
-                  Admin Login
-                </Link>
               </li>
             </ul>
           </div>

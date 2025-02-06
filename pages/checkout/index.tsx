@@ -1,32 +1,63 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { useCart } from "../../components/contexts/CartContext"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCart } from "@/components/contexts/CartContext";
 
 export default function Checkout() {
-  const router = useRouter()
-  const { cart, clearCart } = useCart()
+  const router = useRouter();
+  const { cart, clearCart } = useCart();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
+    fullName: "",
     email: "",
-    phone: "",
-    address: "",
-  })
+    phoneNumber: "",
+    shippingAddress: "",
+  });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("Order placed:", { cart, customerDetails: formData })
-    clearCart()
-    router.push("/thank-you")
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (loading) return;
 
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    setLoading(true);
+    try {
+      const totalAmount = cart.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+      );
+
+      const response = await fetch("/api/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          cartItems: cart,
+          totalAmount,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.message || "Failed to place order");
+      } else {
+        clearCart();
+        router.push("/thank-you");
+      }
+    } catch (error: any) {
+      console.error("Order failed:", error);
+      alert(error.message || "Error placing order. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -34,23 +65,32 @@ export default function Checkout() {
       <div className="grid md:grid-cols-2 gap-8">
         <div>
           <h2 className="text-2xl font-semibold mb-4">Your Cart</h2>
-          {cart.map((item) => (
-            <div key={item.id} className="flex justify-between items-center mb-4">
-              <span>
-                {item.name} x {item.quantity}
-              </span>
-              <span>${(item.price * item.quantity).toFixed(2)}</span>
-            </div>
-          ))}
-          <div className="text-xl font-bold mt-4">Total: ${total.toFixed(2)}</div>
+          {cart.length > 0 ? (
+            cart.map((item) => (
+              <div
+                key={item.id}
+                className="flex justify-between items-center mb-4"
+              >
+                <span>
+                  {item.name} x {item.quantity}
+                </span>
+                <span>${(item.price * item.quantity).toFixed(2)}</span>
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-500">Your cart is empty.</p>
+          )}
+          <div className="text-xl font-bold mt-4">
+            Total: ${total.toFixed(2)}
+          </div>
         </div>
         <div>
           <h2 className="text-2xl font-semibold mb-4">Your Details</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
               type="text"
-              name="name"
-              value={formData.name}
+              name="fullName"
+              value={formData.fullName}
               onChange={handleInputChange}
               placeholder="Full Name"
               required
@@ -67,8 +107,8 @@ export default function Checkout() {
             />
             <input
               type="tel"
-              name="phone"
-              value={formData.phone}
+              name="phoneNumber"
+              value={formData.phoneNumber}
               onChange={handleInputChange}
               placeholder="Phone Number"
               required
@@ -76,8 +116,8 @@ export default function Checkout() {
             />
             <input
               type="text"
-              name="address"
-              value={formData.address}
+              name="shippingAddress"
+              value={formData.shippingAddress}
               onChange={handleInputChange}
               placeholder="Shipping Address"
               required
@@ -86,13 +126,13 @@ export default function Checkout() {
             <button
               type="submit"
               className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
+              disabled={loading}
             >
-              Place Order
+              {loading ? "Placing Order..." : "Place Order"}
             </button>
           </form>
         </div>
       </div>
     </div>
-  )
+  );
 }
-
