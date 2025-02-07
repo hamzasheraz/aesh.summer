@@ -53,7 +53,7 @@ export default function AdminDashboard() {
     price: "",
     quantity: "",
     type: "",
-    image: null,
+    image: "",
   });
   const [editingProduct, setEditingProduct] = useState(null);
   const [newProductType, setNewProductType] = useState("");
@@ -177,16 +177,18 @@ export default function AdminDashboard() {
     ) {
       try {
         // Create a new FormData object
-        const formData = new FormData();
-        formData.append("name", newProduct.name);
-        formData.append("price", newProduct.price);
-        formData.append("quantity", newProduct.quantity);
-        formData.append("type", newProduct.type);
-        formData.append("image", newProduct.image); // Append the image file
-
+        // const formData = new FormData();
+        // formData.append("name", newProduct.name);
+        // formData.append("price", newProduct.price);
+        // formData.append("quantity", newProduct.quantity);
+        // formData.append("type", newProduct.type);
+        // formData.append("image", newProduct.image); // Append the image file
         const response = await fetch("/api/product-management", {
           method: "POST",
-          body: formData, // Send FormData containing the image
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newProduct), 
         });
 
         if (!response.ok) {
@@ -203,7 +205,7 @@ export default function AdminDashboard() {
           price: "",
           quantity: "",
           type: "",
-          image: null,
+          image: "",
         });
       } catch (err) {
         if (err instanceof Error) {
@@ -375,10 +377,7 @@ export default function AdminDashboard() {
   };
 
   const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setNewProduct({ ...newProduct, image: file });
-    }
+      setNewProduct({ ...newProduct, image: e.target.value});
   };
 
   if (isLoading) {
@@ -552,10 +551,12 @@ export default function AdminDashboard() {
                 </Select>
 
                 <Input
-                  type="file"
-                  accept="image/*"
+                  type="text"
+                  placeholder="Enter image URL"
                   onChange={handleImageChange}
+                  className="border p-2 rounded-md w-full"
                   required={true}
+                  value={newProduct.image}
                 />
                 <Button onClick={handleAddProduct} className="w-full">
                   Add Product
@@ -601,7 +602,7 @@ export default function AdminDashboard() {
                           <TableCell className="font-medium">
                             {product.name}
                           </TableCell>
-                          <TableCell>${product.price.toFixed(2)}</TableCell>
+                          <TableCell>Rs.{product.price.toFixed(2)}</TableCell>
                           <TableCell>{product.quantity}</TableCell>
                           <TableCell>
                             {product.type?.name || "Unknown"}

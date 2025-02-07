@@ -1,29 +1,12 @@
 import { connectDB } from "@/lib/mongodb";
 import Product from "@/lib/models/Product";
 import ProductType from "@/lib/models/ProductType";
-import multer from "multer";
-import path from "path";
-import { promisify } from "util";
-import fs from "fs";
 
 export const config = {
   api: {
     bodyParser: false, // Disable built-in bodyParser since Multer handles file uploads
   },
 };
-
-// Configure Multer for file storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "public/uploads");
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}${path.extname(file.originalname)}`);
-  },
-});
-
-const upload = multer({ storage }).single("image");
-const uploadMiddleware = promisify(upload);
 
 // API route handler
 export default async function handler(req, res) {
@@ -49,17 +32,30 @@ export default async function handler(req, res) {
 // ADD PRODUCT
 const addProduct = async (req, res) => {
   try {
-    // Handle file upload
-    await uploadMiddleware(req, res);
-
-    const { name, price, quantity, type } = req.body;
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    const data = await new Promise((resolve, reject) => {
+      let body = "";
+      req.on("data", (chunk) => {
+        body += chunk;
+      });
+      req.on("end", () => {
+        try {
+          resolve(JSON.parse(body)); // Parse the incoming JSON
+        } catch (error) {
+          reject("Failed to parse body",error);
+        }
+      });
+    });
+    const { name, price, quantity, type, image } = data
 
     // Ensure all required fields are provided
-    if (!name || !price || !quantity || !type || !imageUrl) {
-      return res
-        .status(400)
-        .json({ success: false, message: "All fields are required" });
+    if (!name || !price || !quantity || !type || !image) {
+      return res.status(400).json({ success: false, message: "All fields are required" });
+    }
+
+    // Validate that image is a valid URL
+    const urlRegex = /^(https?:\/\/[^\s$.?#].[^\s]*)$/;
+    if (!urlRegex.test(image)) {
+      return res.status(400).json({ success: false, message: "Invalid image URL" });
     }
 
     // Create new product
@@ -68,27 +64,23 @@ const addProduct = async (req, res) => {
       price: parseFloat(price), // Convert string to number
       quantity: parseInt(quantity), // Convert string to number
       type,
-      image: imageUrl,
+      image, // Store the image URL directly
     });
 
     // Save the product to the database
     await newProduct.save();
 
     // Populate the type field to include the type name
-    const populatedProduct = await Product.findById(newProduct._id).populate(
-      "type",
-      "name"
-    );
+    const populatedProduct = await Product.findById(newProduct._id).populate("type", "name");
 
     // Return the populated product with type name
     return res.status(201).json({ success: true, product: populatedProduct });
   } catch (error) {
     console.error("Error adding product:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Failed to create product" });
+    return res.status(500).json({ success: false, message: "Failed to create product" });
   }
 };
+
 
 // EDIT PRODUCT
 const editProduct = async (req, res) => {
@@ -144,16 +136,6 @@ const editProduct = async (req, res) => {
       // Handle image update (optional)
       if (data.image && data.image !== product.image) {
         // Delete old image if new one is uploaded
-        if (product.image) {
-          const imagePath = path.join(process.cwd(), "public", product.image);
-          fs.unlink(imagePath, (err) => {
-            if (err) {
-              console.error("Error deleting image:", err);
-            } else {
-              console.log("Image deleted successfully:", imagePath);
-            }
-          });
-        }
         // Update the product image path
         product.image = data.image;
       }
@@ -209,18 +191,6 @@ const deleteProduct = async (req, res) => {
         return res
           .status(404)
           .json({ success: false, message: "Product not found" });
-      }
-
-      // Delete the image file if it exists
-      if (product.image) {
-        const imagePath = path.join(process.cwd(), "public", product.image);
-        fs.unlink(imagePath, (err) => {
-          if (err) {
-            console.error("Error deleting image:", err);
-          } else {
-            console.log("Image deleted successfully:", imagePath);
-          }
-        });
       }
 
       // Delete the product

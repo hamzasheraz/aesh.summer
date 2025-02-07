@@ -90,7 +90,7 @@ export default function ProductDisplay({ category }: ProductDisplayProps) {
             </div>
             <div className="p-4">
               <h3 className="text-lg font-semibold text-gray-800">{product.name}</h3>
-              <p className="text-blue-600 font-bold mt-2">${product.price.toFixed(2)}</p>
+              <p className="text-blue-600 font-bold mt-2">Rs.{product.price.toFixed(2)}</p>
             </div>
           </motion.div>
         ))}
