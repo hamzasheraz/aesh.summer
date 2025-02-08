@@ -8,25 +8,6 @@ export default function Home() {
   return (
     <section className="flex-grow py-12 px-4 sm:px-6 lg:px-8">
       <div className="container mx-auto">
-        {/* Welcome Section */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-16"
-        >
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-blue-600 mb-4" style={{ fontFamily: "Anaktoria" }}>
-            Aesh.Summer
-          </h1>
-          <p className="text-xl text-gray-700 mb-8 max-w-2xl mx-auto">
-            Discover our collection of summer essentials that blend style and
-            comfort for your perfect sunny days.
-          </p>
-          <Button asChild size="lg" className="text-lg px-8 py-4">
-            <Link href="#featured-products">Shop Now</Link>
-          </Button>
-        </motion.div>
-
         {/* Image Section */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
@@ -44,13 +25,23 @@ export default function Home() {
             />
           </div>
           {/* Text on image */}
-          <div className="absolute top-20 right-10">
-            <h2
-              className={`text-5xl md:text-8xl font-extrabold text-white tracking-wide italic drop-shadow-lg`}
-              style={{ fontFamily: "Anaktoria" }}
+          <div className="absolute top-20 right-20">
+            {" "}
+            {/* Moved slightly left */}
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="text-center mb-16"
             >
-              AESH
-            </h2>
+              <Button
+                asChild
+                size="lg" // Keep "lg" as it's the largest valid option
+                className="text-2xl px-12 py-6 font-bold rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-xl transition-transform duration-200 hover:scale-110 hover:shadow-2xl active:scale-95"
+              >
+                <Link href="#featured-products">Shop Now</Link>
+              </Button>
+            </motion.div>
           </div>
         </motion.div>
 
