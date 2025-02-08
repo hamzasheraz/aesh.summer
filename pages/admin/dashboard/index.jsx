@@ -426,6 +426,7 @@ export default function AdminDashboard() {
                       <TableHead className="w-[100px]">Order ID</TableHead>
                       <TableHead>Customer</TableHead>
                       <TableHead>Email</TableHead>
+                      <TableHead>Phone</TableHead>
                       <TableHead>Address</TableHead>
                       <TableHead className="text-right">Total</TableHead>
                       <TableHead>Status</TableHead>
@@ -438,6 +439,7 @@ export default function AdminDashboard() {
                         <TableCell className="font-medium">{idx + 1}</TableCell>
                         <TableCell>{order.fullName}</TableCell>
                         <TableCell>{order.email}</TableCell>
+                        <TableCell>{order.phoneNumber}</TableCell>
                         <TableCell>{order.shippingAddress}</TableCell>
                         <TableCell className="text-right">
                           ${order.totalAmount.toFixed(2)}
