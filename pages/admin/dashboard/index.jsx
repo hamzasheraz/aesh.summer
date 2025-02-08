@@ -188,7 +188,7 @@ export default function AdminDashboard() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(newProduct), 
+          body: JSON.stringify(newProduct),
         });
 
         if (!response.ok) {
@@ -377,7 +377,7 @@ export default function AdminDashboard() {
   };
 
   const handleImageChange = (e) => {
-      setNewProduct({ ...newProduct, image: e.target.value});
+    setNewProduct({ ...newProduct, image: e.target.value });
   };
 
   if (isLoading) {
@@ -604,7 +604,7 @@ export default function AdminDashboard() {
                           <TableCell className="font-medium">
                             {product.name}
                           </TableCell>
-                          <TableCell>Rs.{product.price.toFixed(2)}</TableCell>
+                          <TableCell>${product.price.toFixed(2)}</TableCell>
                           <TableCell>{product.quantity}</TableCell>
                           <TableCell>
                             {product.type?.name || "Unknown"}
@@ -689,13 +689,11 @@ export default function AdminDashboard() {
                                     <Input
                                       id="quantity"
                                       type="number"
-                                      value={editingProduct?.quantity || ""}
+                                      value={editingProduct?.quantity ?? ""}
                                       onChange={(e) =>
                                         setEditingProduct((prev) => ({
                                           ...prev,
-                                          quantity: Number.parseInt(
-                                            e.target.value
-                                          ),
+                                          quantity: Number.parseInt(e.target.value),
                                         }))
                                       }
                                       className="col-span-3 text-black"

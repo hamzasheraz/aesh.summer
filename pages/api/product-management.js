@@ -130,7 +130,7 @@ const editProduct = async (req, res) => {
       // Update the product fields
       product.name = name || product.name;
       product.price = price || product.price;
-      product.quantity = quantity || product.quantity;
+      product.quantity = quantity;
       product.type = type || product.type;
 
       // Handle image update (optional)

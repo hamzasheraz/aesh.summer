@@ -8,10 +8,10 @@ import { motion } from "framer-motion";
 import { Plus, Minus } from "lucide-react";
 
 type ProductDisplayProps = {
-  category?: string
-}
+  category?: string;
+};
 
-// Updated Product Type
+// Updated Product Type with quantity property representing available inventory
 type Product = {
   _id: string; // Updated to match MongoDB documents
   name: string;
@@ -19,12 +19,13 @@ type Product = {
   image: string;
   description: string;
   category: string;
+  quantity: number; // New field indicating available quantity. When 0, the product is sold out.
 };
 
 export default function ProductDisplay({ category }: ProductDisplayProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [error, setError] = useState<string | null>(null); // Handle errors
+  const [error, setError] = useState<string | null>(null);
   const { addToCart, removeFromCart, cart, increaseQuantity, decreaseQuantity } = useCart();
 
   useEffect(() => {
@@ -32,8 +33,8 @@ export default function ProductDisplay({ category }: ProductDisplayProps) {
       try {
         console.log("Fetching products for category:", category);
         const response = category
-          ? await fetch(`/api/products?category=${category}`) // Fetch category-specific products
-          : await fetch("/api/last-products"); // Fetch last products for home page
+          ? await fetch(`/api/products?category=${category}`)
+          : await fetch("/api/last-products");
 
         if (!response.ok) {
           throw new Error(`Failed to fetch products: ${response.statusText}`);
@@ -44,11 +45,11 @@ export default function ProductDisplay({ category }: ProductDisplayProps) {
         if (data.success) {
           setProducts(data.products);
         } else {
-          setError(data.message); // If API returns failure, display the message
+          setError(data.message);
         }
       } catch (error: unknown) {
         if (error instanceof Error) {
-          setError(error.message); // Handle fetch errors safely
+          setError(error.message);
           console.error("Error fetching products:", error.message);
         } else {
           setError("An unknown error occurred.");
@@ -57,10 +58,11 @@ export default function ProductDisplay({ category }: ProductDisplayProps) {
     };
 
     fetchProducts();
-  }, [category]); // Re-run when the category changes
+  }, [category]);
 
   const closeModal = () => setSelectedProduct(null);
 
+  // Returns the quantity of the given product in the cart.
   const getItemQuantity = (id: string) => {
     const item = cart.find((item) => item._id === id);
     return item ? item.quantity : 0;
@@ -68,7 +70,7 @@ export default function ProductDisplay({ category }: ProductDisplayProps) {
 
   return (
     <>
-      {error && <p className="text-red-500 text-center">{error}</p>} {/* Show error message */}
+      {error && <p className="text-red-500 text-center">{error}</p>}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {products.map((product) => (
@@ -87,10 +89,15 @@ export default function ProductDisplay({ category }: ProductDisplayProps) {
                 layout="fill"
                 objectFit="cover"
               />
+              {product.quantity === 0 && (
+                <div className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
+                  Sold Out
+                </div>
+              )}
             </div>
             <div className="p-4">
               <h3 className="text-lg font-semibold text-gray-800">{product.name}</h3>
-              <p className="text-blue-600 font-bold mt-2">Rs.{product.price.toFixed(2)}</p>
+              <p className="text-blue-600 font-bold mt-2">${product.price.toFixed(2)}</p>
             </div>
           </motion.div>
         ))}
@@ -126,44 +133,64 @@ export default function ProductDisplay({ category }: ProductDisplayProps) {
                 <p className="text-gray-600 mb-4">{selectedProduct.description}</p>
                 <p className="text-blue-600 font-bold text-xl mb-4">${selectedProduct.price.toFixed(2)}</p>
                 <div className="space-y-4">
-                  {getItemQuantity(selectedProduct._id) > 0 ? (
-                    <div className="flex items-center space-x-4">
-                      <button
-                        onClick={() => decreaseQuantity(selectedProduct._id)}
-                        className="bg-gray-200 text-gray-700 py-2 px-4 rounded-full hover:bg-gray-300 transition"
-                      >
-                        <Minus size={16} />
-                      </button>
-                      <span className="text-xl font-semibold">{getItemQuantity(selectedProduct._id)}</span>
-                      <button
-                        onClick={() => increaseQuantity(selectedProduct._id)}
-                        className="bg-gray-200 text-gray-700 py-2 px-4 rounded-full hover:bg-gray-300 transition"
-                      >
-                        <Plus size={16} />
-                      </button>
-                    </div>
+                  {selectedProduct.quantity === 0 ? (
+                    <>
+                      <div className="w-full bg-red-600 text-white py-2 px-4 rounded text-center">
+                        Sold Out
+                      </div>
+                      {getItemQuantity(selectedProduct._id) > 0 && (
+                        <button
+                          onClick={() => removeFromCart(selectedProduct._id)}
+                          className="w-full bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700 transition"
+                        >
+                          Remove from Cart
+                        </button>
+                      )}
+                    </>
                   ) : (
-                    <button
-                      onClick={() => addToCart({ ...selectedProduct, quantity: 1 })}
-                      className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
-                    >
-                      Add to Cart
-                    </button>
+                    <>
+                      {getItemQuantity(selectedProduct._id) > 0 ? (
+                        <div className="flex items-center space-x-4">
+                          <button
+                            onClick={() => decreaseQuantity(selectedProduct._id)}
+                            className="bg-gray-200 text-gray-700 py-2 px-4 rounded-full hover:bg-gray-300 transition"
+                          >
+                            <Minus size={16} />
+                          </button>
+                          <span className="text-xl font-semibold">
+                            {getItemQuantity(selectedProduct._id)}
+                          </span>
+                          <button
+                            onClick={() => increaseQuantity(selectedProduct._id)}
+                            className="bg-gray-200 text-gray-700 py-2 px-4 rounded-full hover:bg-gray-300 transition"
+                          >
+                            <Plus size={16} />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => addToCart({ ...selectedProduct, quantity: 1 })}
+                          className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
+                        >
+                          Add to Cart
+                        </button>
+                      )}
+                      {getItemQuantity(selectedProduct._id) > 0 && (
+                        <button
+                          onClick={() => removeFromCart(selectedProduct._id)}
+                          className="w-full bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700 transition"
+                        >
+                          Remove from Cart
+                        </button>
+                      )}
+                      <Link
+                        href="/checkout"
+                        className="block w-full text-center bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition"
+                      >
+                        Proceed to Checkout
+                      </Link>
+                    </>
                   )}
-                  {getItemQuantity(selectedProduct._id) > 0 && (
-                    <button
-                      onClick={() => removeFromCart(selectedProduct._id)}
-                      className="w-full bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700 transition"
-                    >
-                      Remove from Cart
-                    </button>
-                  )}
-                  <Link
-                    href="/checkout"
-                    className="block w-full text-center bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition"
-                  >
-                    Proceed to Checkout
-                  </Link>
                 </div>
               </div>
             </div>
