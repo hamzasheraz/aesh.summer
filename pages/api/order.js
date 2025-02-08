@@ -14,6 +14,7 @@ export default async function handler(req, res) {
         shippingAddress,
         cartItems,
         totalAmount,
+        paymentMethod,
       } = req.body;
 
       // Transform cartItems: change each item's _id to productId
@@ -43,6 +44,7 @@ export default async function handler(req, res) {
         shippingAddress,
         cartItems: formattedCartItems,
         totalAmount,
+       paymentMethod,
       });
 
       await newOrder.save();

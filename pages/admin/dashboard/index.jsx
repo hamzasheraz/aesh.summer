@@ -476,13 +476,6 @@ export default function AdminDashboard() {
                             >
                               View
                             </Button>
-                            {/* <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleCancelOrder(order._id)}
-                            >
-                              Cancel
-                            </Button> */}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -1003,6 +996,17 @@ export default function AdminDashboard() {
                 <Input
                   id="total"
                   value={`$${selectedOrder.totalAmount.toFixed(2)}`}
+                  className="col-span-3 text-black"
+                  readOnly
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="payment" className="text-right text-black">
+                  Payment Method
+                </Label>
+                <Input
+                  id="payment"
+                  value={selectedOrder.paymentMethod}
                   className="col-span-3 text-black"
                   readOnly
                 />

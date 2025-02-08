@@ -8,6 +8,7 @@ export default function Checkout() {
   const router = useRouter();
   const { cart, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "online">("cash");
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -38,6 +39,7 @@ export default function Checkout() {
           ...formData,
           cartItems: cart,
           totalAmount,
+          paymentMethod,
         }),
       });
 
@@ -47,11 +49,11 @@ export default function Checkout() {
         alert(data.message || "Failed to place order");
       } else {
         clearCart();
-        router.push("/thank-you");
+        router.push(`/thank-you?payment=${paymentMethod}`);
       }
     } catch (error: unknown) {
-      if(error instanceof Error) {
-      alert(error.message || "Error placing order. Please try again.");
+      if (error instanceof Error) {
+        alert(error.message || "Error placing order. Please try again.");
       } else {
         alert("An unknown error occurred. Please try again.");
       }
@@ -64,7 +66,7 @@ export default function Checkout() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Checkout</h1>
+ <h1 className="text-3xl font-bold mb-8">Checkout</h1>
       <div className="grid md:grid-cols-2 gap-8">
         <div>
           <h2 className="text-2xl font-semibold mb-4">Your Cart</h2>
@@ -87,7 +89,9 @@ export default function Checkout() {
             Total: ${total.toFixed(2)}
           </div>
         </div>
-        <div>
+
+        {/* Checkout Form */}
+        <div className="bg-white shadow-lg p-6 rounded-lg">
           <h2 className="text-2xl font-semibold mb-4">Your Details</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
@@ -97,7 +101,7 @@ export default function Checkout() {
               onChange={handleInputChange}
               placeholder="Full Name"
               required
-              className="w-full p-2 border rounded"
+              className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <input
               type="email"
@@ -106,7 +110,7 @@ export default function Checkout() {
               onChange={handleInputChange}
               placeholder="Email"
               required
-              className="w-full p-2 border rounded"
+              className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <input
               type="tel"
@@ -115,7 +119,7 @@ export default function Checkout() {
               onChange={handleInputChange}
               placeholder="Phone Number"
               required
-              className="w-full p-2 border rounded"
+              className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <input
               type="text"
@@ -124,14 +128,48 @@ export default function Checkout() {
               onChange={handleInputChange}
               placeholder="Shipping Address"
               required
-              className="w-full p-2 border rounded"
+              className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+
+            {/* Payment Method Selection */}
+            <div>
+              <h3 className="text-xl font-semibold mb-2">Payment Method</h3>
+              <div className="flex space-x-4">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("cash")}
+                  className={`px-4 py-2 border rounded-md transition-colors duration-200 ${
+                    paymentMethod === "cash"
+                      ? "bg-blue-600 text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  Cash on Delivery
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("online")}
+                  className={`px-4 py-2 border rounded-md transition-colors duration-200 ${
+                    paymentMethod === "online"
+                      ? "bg-blue-600 text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  Online Payment
+                </button>
+              </div>
+            </div>
+
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
               disabled={loading}
+              className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors duration-200"
             >
-              {loading ? "Placing Order..." : "Place Order"}
+              {loading
+                ? "Placing Order..."
+                : paymentMethod === "cash"
+                ? "Place Order (Cash on Delivery)"
+                : "Place Order (Online Payment)"}
             </button>
           </form>
         </div>
