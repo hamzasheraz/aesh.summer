@@ -36,8 +36,8 @@ export default function Home() {
             >
               <Button
                 asChild
-                size="lg" // Keep "lg" as it's the largest valid option
-                className="text-2xl px-12 py-6 font-bold rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-xl transition-transform duration-200 hover:scale-110 hover:shadow-2xl active:scale-95"
+                size="sm"
+                className="w-full md:w-auto text-sm md:text-lg px-4 md:px-8 py-2 md:py-4 font-bold rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transition-transform duration-200 hover:scale-105 hover:shadow-xl active:scale-95"
               >
                 <Link href="#featured-products">Shop Now</Link>
               </Button>
