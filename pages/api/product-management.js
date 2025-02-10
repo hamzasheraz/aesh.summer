@@ -41,46 +41,59 @@ const addProduct = async (req, res) => {
         try {
           resolve(JSON.parse(body)); // Parse the incoming JSON
         } catch (error) {
-          reject("Failed to parse body",error);
+          reject("Failed to parse body", error);
         }
       });
     });
-    const { name, price, quantity, type, image } = data
+
+    // Destructure and include sizes along with other fields.
+    const { name, price, quantity, type, image, sizes } = data;
 
     // Ensure all required fields are provided
-    if (!name || !price || !quantity || !type || !image) {
-      return res.status(400).json({ success: false, message: "All fields are required" });
+    if (!name || !price || !quantity || !type || !image || !sizes) {
+      return res
+        .status(400)
+        .json({ success: false, message: "All fields are required" });
     }
 
     // Validate that image is a valid URL
     const urlRegex = /^(https?:\/\/[^\s$.?#].[^\s]*)$/;
     if (!urlRegex.test(image)) {
-      return res.status(400).json({ success: false, message: "Invalid image URL" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid image URL" });
     }
 
-    // Create new product
+    // Create new product including sizes
     const newProduct = new Product({
       name,
       price: parseFloat(price), // Convert string to number
       quantity: parseInt(quantity), // Convert string to number
       type,
       image, // Store the image URL directly
+      sizes, // Expecting an array of strings for sizes
     });
 
     // Save the product to the database
     await newProduct.save();
 
     // Populate the type field to include the type name
-    const populatedProduct = await Product.findById(newProduct._id).populate("type", "name");
+    const populatedProduct = await Product.findById(newProduct._id).populate(
+      "type",
+      "name"
+    );
 
     // Return the populated product with type name
-    return res.status(201).json({ success: true, product: populatedProduct });
+    return res
+      .status(201)
+      .json({ success: true, product: populatedProduct });
   } catch (error) {
     console.error("Error adding product:", error);
-    return res.status(500).json({ success: false, message: "Failed to create product" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Failed to create product" });
   }
 };
-
 
 // EDIT PRODUCT
 const editProduct = async (req, res) => {
@@ -96,12 +109,13 @@ const editProduct = async (req, res) => {
           try {
             resolve(JSON.parse(body)); // Parse the incoming JSON
           } catch (error) {
-            reject("Failed to parse body",error);
+            reject("Failed to parse body", error);
           }
         });
       });
 
-      const { _id, name, price, quantity, type } = data;
+      // Destructure data including sizes if provided
+      const { _id, name, price, quantity, type, image, sizes } = data;
 
       if (!_id) {
         return res
@@ -127,17 +141,21 @@ const editProduct = async (req, res) => {
         }
       }
 
-      // Update the product fields
+      // Update the product fields. Only update if the field is provided.
       product.name = name || product.name;
       product.price = price || product.price;
-      product.quantity = quantity;
+      product.quantity = quantity || product.quantity;
       product.type = type || product.type;
 
       // Handle image update (optional)
-      if (data.image && data.image !== product.image) {
-        // Delete old image if new one is uploaded
-        // Update the product image path
-        product.image = data.image;
+      if (image && image !== product.image) {
+        // Here you could add logic to delete the old image if necessary
+        product.image = image;
+      }
+
+      // Update sizes if provided. Expect sizes to be an array.
+      if (sizes) {
+        product.sizes = sizes;
       }
 
       // Save the updated product
@@ -152,10 +170,14 @@ const editProduct = async (req, res) => {
       return res.status(200).json({ success: true, product: updatedProduct });
     } catch (error) {
       console.error("Error editing product:", error);
-      return res.status(500).json({ success: false, message: "Server error" });
+      return res
+        .status(500)
+        .json({ success: false, message: "Server error" });
     }
   } else {
-    return res.status(405).json({ success: false, message: "Method Not Allowed" });
+    return res
+      .status(405)
+      .json({ success: false, message: "Method Not Allowed" });
   }
 };
 
@@ -172,7 +194,7 @@ const deleteProduct = async (req, res) => {
           try {
             resolve(JSON.parse(body)); // Parse the incoming JSON
           } catch (error) {
-            reject("Failed to parse body",error);
+            reject("Failed to parse body", error);
           }
         });
       });

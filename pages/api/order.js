@@ -17,18 +17,34 @@ export default async function handler(req, res) {
         paymentMethod,
       } = req.body;
 
-      // Transform cartItems: change each item's _id to productId
+      // Transform cartItems: change each item's _id to productId and include size if available
       const formattedCartItems = cartItems.map((item) => ({
         productId: item._id,
         name: item.name,
         quantity: item.quantity,
         price: item.price,
+        size: item.size, // include size if provided
       }));
 
-      // Check if there's enough stock before placing the order
+      // Check if there's enough stock before placing the order and verify sizes if provided
       for (const item of formattedCartItems) {
         const product = await Product.findById(item.productId);
-        if (!product || product.quantity < item.quantity) {
+        if (!product) {
+          return res.status(400).json({
+            success: false,
+            message: `Product not found: ${item.name}`,
+          });
+        }
+
+        // If a size is selected, verify it exists in the product's available sizes
+        if (item.size && (!product.sizes || !product.sizes.includes(item.size))) {
+          return res.status(400).json({
+            success: false,
+            message: `Selected size "${item.size}" is not available for product: ${item.name}`,
+          });
+        }
+
+        if (product.quantity < item.quantity) {
           return res.status(400).json({
             success: false,
             message: `Not enough stock for product: ${item.name}`,
@@ -44,7 +60,7 @@ export default async function handler(req, res) {
         shippingAddress,
         cartItems: formattedCartItems,
         totalAmount,
-       paymentMethod,
+        paymentMethod,
       });
 
       await newOrder.save();
@@ -65,7 +81,7 @@ export default async function handler(req, res) {
         order: newOrder,
       });
     } catch (error) {
-      console.error(error);  // Log the error to the console
+      console.error(error);
       res
         .status(500)
         .json({ success: false, message: "Error placing order" });
@@ -75,7 +91,7 @@ export default async function handler(req, res) {
       const orders = await Order.find();
       res.status(200).json({ success: true, orders });
     } catch (error) {
-      console.error(error);  // Log the error to the console
+      console.error(error);
       res
         .status(500)
         .json({ success: false, message: "Error fetching orders" });
@@ -101,7 +117,7 @@ export default async function handler(req, res) {
         order: updatedOrder,
       });
     } catch (error) {
-      console.error(error);  // Log the error to the console
+      console.error(error);
       res
         .status(500)
         .json({

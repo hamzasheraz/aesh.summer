@@ -380,6 +380,16 @@ export default function AdminDashboard() {
     setNewProduct({ ...newProduct, image: e.target.value });
   };
 
+  const [sizesInput, setSizesInput] = useState("");
+
+  useEffect(() => {
+    if (editingProduct?.sizes) {
+      setSizesInput(editingProduct.sizes.join(", "));
+    } else {
+      setSizesInput("");
+    }
+  }, [editingProduct]);
+
   if (isLoading) {
     return <div className="container mx-auto p-4">Loading...</div>;
   }
@@ -553,10 +563,31 @@ export default function AdminDashboard() {
                   required={true}
                   value={newProduct.image}
                 />
+
+                {/* New Sizes Input Field */}
+                <Input
+                  id="sizes"
+                  value={sizesInput}
+                  onChange={(e) => setSizesInput(e.target.value)}
+                  onBlur={() =>
+                    // On blur, update the editingProduct state with the parsed array.
+                    setEditingProduct((prev) => ({
+                      ...prev,
+                      sizes: sizesInput
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter((s) => s),
+                    }))
+                  }
+                  placeholder="Enter sizes separated by commas"
+                  className="col-span-3 text-black"
+                />
+
                 <Button onClick={handleAddProduct} className="w-full">
                   Add Product
                 </Button>
               </div>
+
               <ScrollArea className="h-[300px] w-full">
                 <Table>
                   <TableHeader>
@@ -565,6 +596,7 @@ export default function AdminDashboard() {
                       <TableHead>Name</TableHead>
                       <TableHead>Price</TableHead>
                       <TableHead>Quantity</TableHead>
+                      <TableHead>Sizes</TableHead> {/* New column for sizes */}
                       <TableHead>Type</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -585,8 +617,8 @@ export default function AdminDashboard() {
                                 <Image
                                   src={product.image}
                                   alt={product.name}
-                                  fill // Use fill instead of width and height
-                                  objectFit="cover" // Ensures the image covers the container with aspect ratio preserved
+                                  fill
+                                  objectFit="cover"
                                   className="rounded-md"
                                 />
                               </div>
@@ -594,14 +626,15 @@ export default function AdminDashboard() {
                               <span className="text-gray-500">No Image</span>
                             )}
                           </TableCell>
-                          <TableCell className="font-medium">
-                            {product.name}
-                          </TableCell>
+                          <TableCell className="font-medium">{product.name}</TableCell>
                           <TableCell>${product.price.toFixed(2)}</TableCell>
                           <TableCell>{product.quantity}</TableCell>
                           <TableCell>
-                            {product.type?.name || "Unknown"}
+                            {product.sizes && product.sizes.length > 0
+                              ? product.sizes.join(", ")
+                              : "N/A"}
                           </TableCell>
+                          <TableCell>{product.type?.name || "Unknown"}</TableCell>
                           <TableCell className="text-right">
                             {/* Edit Dialog Trigger */}
                             <Dialog>
@@ -613,7 +646,7 @@ export default function AdminDashboard() {
                                   onClick={() =>
                                     setEditingProduct({
                                       ...product,
-                                      type: product.type?._id, // Populate the type
+                                      type: product.type?._id, // Populate the type field with its ID
                                     })
                                   }
                                 >
@@ -632,10 +665,7 @@ export default function AdminDashboard() {
                                 </DialogHeader>
                                 <div className="grid gap-4 py-4">
                                   <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label
-                                      htmlFor="name"
-                                      className="text-right text-black"
-                                    >
+                                    <Label htmlFor="name" className="text-right text-black">
                                       Name
                                     </Label>
                                     <Input
@@ -651,10 +681,7 @@ export default function AdminDashboard() {
                                     />
                                   </div>
                                   <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label
-                                      htmlFor="price"
-                                      className="text-right text-black"
-                                    >
+                                    <Label htmlFor="price" className="text-right text-black">
                                       Price
                                     </Label>
                                     <Input
@@ -664,9 +691,7 @@ export default function AdminDashboard() {
                                       onChange={(e) =>
                                         setEditingProduct((prev) => ({
                                           ...prev,
-                                          price: Number.parseFloat(
-                                            e.target.value
-                                          ),
+                                          price: Number.parseFloat(e.target.value),
                                         }))
                                       }
                                       className="col-span-3 text-black"
@@ -692,11 +717,31 @@ export default function AdminDashboard() {
                                       className="col-span-3 text-black"
                                     />
                                   </div>
+                                  {/* New Sizes Input Field */}
                                   <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label
-                                      htmlFor="type"
-                                      className="text-right text-black"
-                                    >
+                                    <Label htmlFor="sizes" className="text-right text-black">
+                                      Sizes
+                                    </Label>
+                                    <Input
+                                      id="sizes"
+                                      value={sizesInput}
+                                      onChange={(e) => setSizesInput(e.target.value)}
+                                      onBlur={() =>
+                                        // On blur, update the editingProduct state with the parsed array.
+                                        setEditingProduct((prev) => ({
+                                          ...prev,
+                                          sizes: sizesInput
+                                            .split(",")
+                                            .map((s) => s.trim())
+                                            .filter((s) => s),
+                                        }))
+                                      }
+                                      placeholder="Enter sizes separated by commas"
+                                      className="col-span-3 text-black"
+                                    />
+                                  </div>
+                                  <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="type" className="text-right text-black">
                                       Type
                                     </Label>
                                     <Select
@@ -713,10 +758,7 @@ export default function AdminDashboard() {
                                       </SelectTrigger>
                                       <SelectContent>
                                         {productTypes.map((type) => (
-                                          <SelectItem
-                                            key={type._id}
-                                            value={type._id}
-                                          >
+                                          <SelectItem key={type._id} value={type._id}>
                                             {type.name}
                                           </SelectItem>
                                         ))}
@@ -725,9 +767,7 @@ export default function AdminDashboard() {
                                   </div>
                                 </div>
                                 <DialogFooter>
-                                  <Button onClick={handleEditProduct}>
-                                    Save changes
-                                  </Button>
+                                  <Button onClick={handleEditProduct}>Save changes</Button>
                                 </DialogFooter>
                               </DialogContent>
                             </Dialog>
@@ -744,10 +784,7 @@ export default function AdminDashboard() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell
-                          colSpan={6}
-                          className="text-center text-gray-500"
-                        >
+                        <TableCell colSpan={7} className="text-center text-gray-500">
                           No products available.
                         </TableCell>
                       </TableRow>
@@ -977,14 +1014,11 @@ export default function AdminDashboard() {
                 <Label className="text-right text-black">Items</Label>
                 <div className="col-span-3">
                   {selectedOrder.cartItems.map((item, index) => (
-                    <div
-                      key={index}
-                      className="flex justify-between text-black"
-                    >
+                    <div key={index} className="flex justify-between text-black">
                       <span>
-                        {item.name} x {item.quantity}
+                        {item.name} x {item.quantity}{" "}
+                        {item.size ? `(Size: ${item.size})` : ""}
                       </span>
-                      {/* <span>${item.totalPrice.toFixed(2)}</span> */}
                     </div>
                   ))}
                 </div>
@@ -1012,6 +1046,7 @@ export default function AdminDashboard() {
                 />
               </div>
             </div>
+
             <DialogFooter>
               <Button onClick={() => setSelectedOrder(null)}>Close</Button>
             </DialogFooter>

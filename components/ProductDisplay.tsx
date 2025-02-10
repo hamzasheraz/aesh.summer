@@ -5,13 +5,12 @@ import Image from "next/image";
 import { useCart } from "@/components/contexts/CartContext";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Plus, Minus } from "lucide-react";
+import { Plus, Minus, ChevronDown, ChevronUp } from "lucide-react";
 
 type ProductDisplayProps = {
   category?: string;
 };
 
-// Updated Product Type with quantity property representing available inventory
 type Product = {
   _id: string; // Updated to match MongoDB documents
   name: string;
@@ -19,13 +18,31 @@ type Product = {
   image: string;
   description: string;
   category: string;
-  quantity: number; // New field indicating available quantity. When 0, the product is sold out.
+  quantity: number; // When 0, the product is sold out.
+  sizes?: string[]; // Optional array of available sizes (fetched from the backend).
 };
+
+// Define a type for the size chart data
+type SizeChart = {
+  size: string;
+  shoulder: number;
+  sleeve: number;
+  pitToPit: number;
+  bodyLength: number;
+};
+
+// Example static size chart data. Replace with dynamic data if needed.
+const sizeChartData: SizeChart[] = [
+  { size: "Aristocrat", shoulder: 14, sleeve: 22, pitToPit: 51, bodyLength: 68 },
+  { size: "Duke", shoulder: 15, sleeve: 23, pitToPit: 56, bodyLength: 72 },
+];
 
 export default function ProductDisplay({ category }: ProductDisplayProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string>(""); // Holds the selected size (if applicable)
   const [error, setError] = useState<string | null>(null);
+  const [showSizeChart, setShowSizeChart] = useState(false); // Toggle for size chart display
   const { addToCart, removeFromCart, cart, increaseQuantity, decreaseQuantity } = useCart();
 
   useEffect(() => {
@@ -59,6 +76,12 @@ export default function ProductDisplay({ category }: ProductDisplayProps) {
 
     fetchProducts();
   }, [category]);
+
+  // Reset the selected size and hide the size chart whenever a new product is selected
+  useEffect(() => {
+    setSelectedSize("");
+    setShowSizeChart(false);
+  }, [selectedProduct]);
 
   const closeModal = () => setSelectedProduct(null);
 
@@ -110,15 +133,15 @@ export default function ProductDisplay({ category }: ProductDisplayProps) {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.3 }}
-            className="bg-white rounded-lg p-8 max-w-2xl w-full"
+            className="bg-white rounded-lg p-6 sm:p-8 w-full max-w-2xl mx-auto"
           >
             <div className="flex justify-between items-start mb-4">
               <h2 className="text-2xl font-bold">{selectedProduct.name}</h2>
-              <button onClick={closeModal} className="text-gray-500 hover:text-gray-700">
+              <button onClick={closeModal} className="text-gray-500 hover:text-gray-700 text-2xl leading-none">
                 &times;
               </button>
             </div>
-            <div className="flex flex-col md:flex-row gap-8">
+            <div className="flex flex-col md:flex-row gap-6">
               <div className="w-full md:w-1/2">
                 <Image
                   src={selectedProduct.image || "/placeholder.svg"}
@@ -129,9 +152,77 @@ export default function ProductDisplay({ category }: ProductDisplayProps) {
                   className="rounded-lg"
                 />
               </div>
-              <div className="w-full md:w-1/2">
-                <p className="text-gray-600 mb-4">{selectedProduct.description}</p>
-                <p className="text-blue-600 font-bold text-xl mb-4">${selectedProduct.price.toFixed(2)}</p>
+              <div className="w-full md:w-1/2 flex flex-col justify-between">
+                <div>
+                  <p className="text-gray-600 mb-4">{selectedProduct.description}</p>
+                  <p className="text-blue-600 font-bold text-xl mb-4">
+                    ${selectedProduct.price.toFixed(2)}
+                  </p>
+
+                  {/* Display size options if available */}
+                  {selectedProduct.sizes && selectedProduct.sizes.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-gray-700 font-medium mb-2">Select Size:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedProduct.sizes.map((size) => (
+                          <button
+                            key={size}
+                            onClick={() => setSelectedSize(size)}
+                            className={`py-1 px-3 border rounded transition hover:bg-blue-600 hover:text-white ${
+                              selectedSize === size ? "bg-blue-600 text-white" : "bg-white text-gray-800"
+                            }`}
+                          >
+                            {size}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Toggle button for the size chart */}
+                  {selectedProduct.sizes && selectedProduct.sizes.length > 0 && (
+                    <div className="mb-4">
+                      <button
+                        onClick={() => setShowSizeChart(!showSizeChart)}
+                        className="flex items-center text-blue-600 hover:text-blue-800 transition"
+                      >
+                        {showSizeChart ? "Hide Size Chart" : "View Size Chart"}
+                        {showSizeChart ? (
+                          <ChevronUp className="ml-2" size={16} />
+                        ) : (
+                          <ChevronDown className="ml-2" size={16} />
+                        )}
+                      </button>
+                      {showSizeChart && (
+                        <div className="mt-2 overflow-x-auto">
+                          <table className="min-w-full text-sm text-left border border-gray-200">
+                            <thead className="bg-gray-200">
+                              <tr>
+                                <th className="p-2 border-r border-gray-200">Size</th>
+                                <th className="p-2 border-r border-gray-200">Shoulder (cm)</th>
+                                <th className="p-2 border-r border-gray-200">Sleeve (cm)</th>
+                                <th className="p-2 border-r border-gray-200">Pit to Pit (cm)</th>
+                                <th className="p-2">Body Length (cm)</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {sizeChartData.map((item) => (
+                                <tr key={item.size} className="border-t border-gray-200">
+                                  <td className="p-2 border-r border-gray-200">{item.size}</td>
+                                  <td className="p-2 border-r border-gray-200">{item.shoulder}</td>
+                                  <td className="p-2 border-r border-gray-200">{item.sleeve}</td>
+                                  <td className="p-2 border-r border-gray-200">{item.pitToPit}</td>
+                                  <td className="p-2">{item.bodyLength}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 <div className="space-y-4">
                   {selectedProduct.quantity === 0 ? (
                     <>
@@ -169,8 +260,19 @@ export default function ProductDisplay({ category }: ProductDisplayProps) {
                         </div>
                       ) : (
                         <button
-                          onClick={() => addToCart({ ...selectedProduct, quantity: 1 })}
-                          className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
+                          onClick={() =>
+                            addToCart({
+                              ...selectedProduct,
+                              quantity: 1,
+                              size: selectedSize, // include the selected size when adding to cart
+                            })
+                          }
+                          disabled={selectedProduct.sizes && !selectedSize}
+                          className={`w-full text-white py-2 px-4 rounded transition ${
+                            selectedProduct.sizes && !selectedSize
+                              ? "bg-gray-400 cursor-not-allowed"
+                              : "bg-blue-600 hover:bg-blue-700"
+                          }`}
                         >
                           Add to Cart
                         </button>
