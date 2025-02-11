@@ -54,6 +54,7 @@ export default function AdminDashboard() {
     quantity: "",
     type: "",
     image: "",
+    sizes: "",
   });
   const [editingProduct, setEditingProduct] = useState(null);
   const [newProductType, setNewProductType] = useState("");
@@ -173,16 +174,10 @@ export default function AdminDashboard() {
       newProduct.price &&
       newProduct.quantity &&
       newProduct.type &&
-      newProduct.image
+      newProduct.image &&
+      newProduct.sizes
     ) {
       try {
-        // Create a new FormData object
-        // const formData = new FormData();
-        // formData.append("name", newProduct.name);
-        // formData.append("price", newProduct.price);
-        // formData.append("quantity", newProduct.quantity);
-        // formData.append("type", newProduct.type);
-        // formData.append("image", newProduct.image); // Append the image file
         const response = await fetch("/api/product-management", {
           method: "POST",
           headers: {
@@ -206,6 +201,7 @@ export default function AdminDashboard() {
           quantity: "",
           type: "",
           image: "",
+          sizes: "",
         });
       } catch (err) {
         if (err instanceof Error) {
@@ -390,6 +386,18 @@ export default function AdminDashboard() {
     }
   }, [editingProduct]);
 
+  useEffect(() => {
+    const sizesArray = sizesInput
+      .split(",")
+      .map(s => s.trim())
+      .filter(s => s !== "");
+
+    setEditingProduct(prev => ({
+      ...prev,
+      sizes: sizesArray,
+    }));
+  }, [sizesInput]);
+
   if (isLoading) {
     return <div className="container mx-auto p-4">Loading...</div>;
   }
@@ -569,20 +577,20 @@ export default function AdminDashboard() {
                   id="sizes"
                   value={sizesInput}
                   onChange={(e) => setSizesInput(e.target.value)}
-                  onBlur={() =>
-                    // On blur, update the editingProduct state with the parsed array.
-                    setEditingProduct((prev) => ({
+                  onBlur={(e) => {
+                    const currentValue = e.target.value;
+                    const sizesArray = currentValue
+                      .split(",")
+                      .map(s => s.trim())
+                      .filter(s => s !== "");
+                    setNewProduct((prev) => ({
                       ...prev,
-                      sizes: sizesInput
-                        .split(",")
-                        .map((s) => s.trim())
-                        .filter((s) => s),
-                    }))
-                  }
+                      sizes: sizesArray,
+                    }));
+                  }}
                   placeholder="Enter sizes separated by commas"
                   className="col-span-3 text-black"
                 />
-
                 <Button onClick={handleAddProduct} className="w-full">
                   Add Product
                 </Button>
