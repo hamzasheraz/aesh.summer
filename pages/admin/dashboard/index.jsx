@@ -56,7 +56,15 @@ export default function AdminDashboard() {
     image: "",
     sizes: "",
   });
-  const [editingProduct, setEditingProduct] = useState(null);
+  const [editingProduct, setEditingProduct] = useState(
+    {
+      name: "",
+      price: "",
+      quantity: "",
+      type: "",
+      sizes: "",
+    }
+  );
   const [newProductType, setNewProductType] = useState("");
   const [editingProductType, setEditingProductType] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -178,12 +186,20 @@ export default function AdminDashboard() {
       newProduct.sizes
     ) {
       try {
+        // 🔹 Ensure sizes are stored as an array
+        const parsedSizes = typeof newProduct.sizes === "string"
+          ? newProduct.sizes.split(",").map((s) => s.trim()).filter((s) => s) // Convert string to array
+          : newProduct.sizes; // If already an array, use as is
+
         const response = await fetch("/api/product-management", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(newProduct),
+          body: JSON.stringify({
+            ...newProduct,
+            sizes: parsedSizes, // 🔹 Ensuring sizes are correctly formatted
+          }),
         });
 
         if (!response.ok) {
@@ -191,24 +207,26 @@ export default function AdminDashboard() {
         }
 
         const data = await response.json();
-        // If successful, add the new product to the state
+
+        // 🔹 If successful, update the product list
         setProducts((prevProducts) => [...prevProducts, data.product]);
 
-        // Reset new product fields
+        // 🔹 Reset the new product fields
         setNewProduct({
           name: "",
           price: "",
           quantity: "",
           type: "",
           image: "",
-          sizes: "",
+          sizes: "", // Reset sizes as an empty string
         });
+
+        setSizesInput(""); // Also reset the input field
+
       } catch (err) {
         if (err instanceof Error) {
-          // Accessing the message property safely if it's an instance of Error
           setError(`Error: ${err.message}`);
         } else {
-          // Fallback for any other type of error
           setError("An unknown error occurred");
         }
       }
@@ -237,7 +255,15 @@ export default function AdminDashboard() {
               product._id === editingProduct._id ? data.product : product
             )
           );
-          setEditingProduct(null); // Reset the editing state
+          setEditingProduct(
+            {
+              name: "",
+              price: "",
+              quantity: "",
+              type: "",
+              sizes: "",
+            }
+          ); // Reset the editing state
         } else {
           alert(data.message); // Show an error message if edit failed
         }
@@ -301,7 +327,6 @@ export default function AdminDashboard() {
 
   const handleEditProductType = async () => {
     if (editingProductType?.newName && editingProductType?.id) {
-      console.log(editingProductType);
       const response = await fetch("/api/product-type", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -375,28 +400,6 @@ export default function AdminDashboard() {
   const handleImageChange = (e) => {
     setNewProduct({ ...newProduct, image: e.target.value });
   };
-
-  const [sizesInput, setSizesInput] = useState("");
-
-  useEffect(() => {
-    if (editingProduct?.sizes) {
-      setSizesInput(editingProduct.sizes.join(", "));
-    } else {
-      setSizesInput("");
-    }
-  }, [editingProduct]);
-
-  useEffect(() => {
-    const sizesArray = sizesInput
-      .split(",")
-      .map(s => s.trim())
-      .filter(s => s !== "");
-
-    setEditingProduct(prev => ({
-      ...prev,
-      sizes: sizesArray,
-    }));
-  }, [sizesInput]);
 
   if (isLoading) {
     return <div className="container mx-auto p-4">Loading...</div>;
@@ -575,22 +578,19 @@ export default function AdminDashboard() {
                 {/* New Sizes Input Field */}
                 <Input
                   id="sizes"
-                  value={sizesInput}
-                  onChange={(e) => setSizesInput(e.target.value)}
-                  onBlur={(e) => {
-                    const currentValue = e.target.value;
-                    const sizesArray = currentValue
-                      .split(",")
-                      .map(s => s.trim())
-                      .filter(s => s !== "");
+                  value={newProduct.sizes}
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    // setSizesInput(newValue);
                     setNewProduct((prev) => ({
                       ...prev,
-                      sizes: sizesArray,
+                      sizes: newValue, // Store the raw string value
                     }));
                   }}
                   placeholder="Enter sizes separated by commas"
                   className="col-span-3 text-black"
                 />
+
                 <Button onClick={handleAddProduct} className="w-full">
                   Add Product
                 </Button>
@@ -732,18 +732,14 @@ export default function AdminDashboard() {
                                     </Label>
                                     <Input
                                       id="sizes"
-                                      value={sizesInput}
-                                      onChange={(e) => setSizesInput(e.target.value)}
-                                      onBlur={() =>
-                                        // On blur, update the editingProduct state with the parsed array.
+                                      value={editingProduct.sizes}
+                                      onChange={(e) => {
+                                        const newValue = e.target.value;
                                         setEditingProduct((prev) => ({
                                           ...prev,
-                                          sizes: sizesInput
-                                            .split(",")
-                                            .map((s) => s.trim())
-                                            .filter((s) => s),
-                                        }))
-                                      }
+                                          sizes: newValue, // Store the raw string value
+                                        }));
+                                      }}
                                       placeholder="Enter sizes separated by commas"
                                       className="col-span-3 text-black"
                                     />
