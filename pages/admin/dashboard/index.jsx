@@ -463,7 +463,7 @@ export default function AdminDashboard() {
                         <TableCell>{order.phoneNumber}</TableCell>
                         <TableCell>{order.shippingAddress}</TableCell>
                         <TableCell className="text-right">
-                          ${order.totalAmount.toFixed(2)}
+                          PKR {order.totalAmount.toFixed(2)}
                         </TableCell>
                         <TableCell>{order.status}</TableCell>
                         <TableCell className="text-right">
@@ -635,7 +635,7 @@ export default function AdminDashboard() {
                             )}
                           </TableCell>
                           <TableCell className="font-medium">{product.name}</TableCell>
-                          <TableCell>${product.price.toFixed(2)}</TableCell>
+                          <TableCell>PKR{product.price.toFixed(2)}</TableCell>
                           <TableCell>{product.quantity}</TableCell>
                           <TableCell>
                             {product.sizes && product.sizes.length > 0
@@ -1033,7 +1033,7 @@ export default function AdminDashboard() {
                 </Label>
                 <Input
                   id="total"
-                  value={`$${selectedOrder.totalAmount.toFixed(2)}`}
+                  value={`PKR ${selectedOrder.totalAmount.toFixed(2)}`}
                   className="col-span-3 text-black"
                   readOnly
                 />
