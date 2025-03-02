@@ -156,7 +156,7 @@ export default function ProductDisplay({ category }: ProductDisplayProps) {
                 <div>
                   <p className="text-gray-600 mb-4">{selectedProduct.description}</p>
                   <p className="text-blue-600 font-bold text-xl mb-4">
-                    ${selectedProduct.price.toFixed(2)}
+                    PKR {selectedProduct.price.toFixed(2)}
                   </p>
 
                   {/* Display size options if available */}
