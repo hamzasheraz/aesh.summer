@@ -79,14 +79,14 @@ export default function Checkout() {
                 <span>
                   {item.name} x {item.quantity}
                 </span>
-                <span>${(item.price * item.quantity).toFixed(2)}</span>
+                <span>PKR{(item.price * item.quantity).toFixed(2)}</span>
               </div>
             ))
           ) : (
             <p className="text-gray-500">Your cart is empty.</p>
           )}
           <div className="text-xl font-bold mt-4">
-            Total: ${total.toFixed(2)}
+            Total: PKR{total.toFixed(2)}
           </div>
         </div>
 
